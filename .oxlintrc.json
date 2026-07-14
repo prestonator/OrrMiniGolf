@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "import",
+    "react" 
+  ],
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2024": true
+  },
+  "rules": {
+    "eqeqeq": "warn",
+    "no-console": "warn",
+    "no-debugger": "error",
+    "no-empty": "warn",
+
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/consistent-type-imports": "warn",
+    "typescript/explicit-module-boundary-types": "off",
+    
+    "unicorn/prefer-node-protocol": "warn",
+    "unicorn/no-empty-file": "warn"
+  },
+  "ignorePatterns": [
+    "dist",
+    "build",
+    "out",
+    "coverage",
+    "node_modules",
+    ".oxlintrc.json"
+  ]
+}
