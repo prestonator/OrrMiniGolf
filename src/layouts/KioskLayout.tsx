@@ -1,11 +1,16 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useKioskStore } from '../store/useKioskStore'
 
 const IDLE_TIMEOUT_MS = 45000 // 45 seconds
 
 export function KioskLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const queryClient = useQueryClient()
+  
+  const session = useKioskStore((state) => state.session)
   const clearSession = useKioskStore((state) => state.clearSession)
   const isTimerPaused = useKioskStore((state) => state.isTimerPaused)
   
@@ -21,9 +26,10 @@ export function KioskLayout() {
 
     timerRef.current = window.setTimeout(() => {
       clearSession()
+      queryClient.clear() // Explicitly clear React Query cache
       navigate('/')
     }, IDLE_TIMEOUT_MS)
-  }, [isTimerPaused, clearSession, navigate])
+  }, [isTimerPaused, clearSession, navigate, queryClient])
 
   useEffect(() => {
     // Reset timer when component mounts or when `isTimerPaused` changes
@@ -45,6 +51,12 @@ export function KioskLayout() {
       })
     }
   }, [resetTimer])
+
+  // Route protection
+  const publicRoutes = ['/', '/login', '/quick-round-payment']
+  if (!session && !publicRoutes.includes(location.pathname)) {
+    return <Navigate to="/" replace />
+  }
 
   return (
     <div className="w-full h-full min-h-screen">
