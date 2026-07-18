@@ -8,21 +8,21 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
 })
 
 Deno.serve(async (req) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
+
   // Handle CORS
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      }
-    })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response('Unauthorized', { status: 401 })
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders })
     }
 
     const { plotId, pioneerId, alias, type = 'claim' } = await req.json()
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     if (!pioneerId || !alias) {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
-        { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -41,17 +41,11 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    // Verify user
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user || user.id !== pioneerId) {
-      return new Response('Unauthorized', { status: 401 })
-    }
-
     if (type === 'claim') {
       if (plotId === undefined) {
         return new Response(
           JSON.stringify({ error: 'plotId is required for claiming.' }),
-          { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
@@ -65,7 +59,7 @@ Deno.serve(async (req) => {
       if (plot?.owner_id) {
         return new Response(
           JSON.stringify({ error: 'Plot is already claimed by someone else.' }),
-          { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
@@ -78,7 +72,7 @@ Deno.serve(async (req) => {
       if (ownedPlotsCount && ownedPlotsCount > 0) {
         return new Response(
           JSON.stringify({ error: 'You have already claimed a plot. You can only claim one plot total.' }),
-          { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
     } else if (type === 'visit') {
@@ -91,13 +85,13 @@ Deno.serve(async (req) => {
       if (!ownedPlotsCount || ownedPlotsCount === 0) {
         return new Response(
           JSON.stringify({ error: 'You do not own a plot to visit.' }),
-          { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
     } else {
       return new Response(
         JSON.stringify({ error: 'Invalid type parameter.' }),
-        { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -118,14 +112,14 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ clientSecret: paymentIntent.client_secret }),
-      { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal Server Error'
     return new Response(
       JSON.stringify({ error: message }),
-      { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
