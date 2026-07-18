@@ -1,10 +1,15 @@
 import { useState, useEffect, useRef, memo, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getMapState, claimPlot } from '../utils/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { getMapState } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { useKioskStore } from '../store/useKioskStore';
+import ClaimCheckoutForm from './ClaimCheckoutForm';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 const PlotSquare = memo(({ 
   idx, 
@@ -74,6 +79,8 @@ export default function OklahomaPlotMap() {
   const [activePlot, setActivePlot] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [clientSecret, setClientSecret] = useState('');
+  const [isFetchingIntent, setIsFetchingIntent] = useState(false);
 
   const plotDetails = useMemo(() => {
     const details: Record<number, { initials: string, isMine: boolean }> = {};
@@ -131,29 +138,6 @@ export default function OklahomaPlotMap() {
     };
   }, [queryClient]);
 
-  const claimMutation = useMutation({
-    mutationFn: (plotId: number) => {
-      if (!currentUserId) throw new Error("Not authenticated");
-      return claimPlot(plotId, currentUserId);
-    },
-    onSuccess: (data, plotId) => {
-      if (data.error) {
-        setErrorMsg(data.error);
-        setPendingPlots(pendingPlots.filter((id) => id !== activePlot));
-        return;
-      }
-      queryClient.invalidateQueries({ queryKey: ['mapState'] });
-      setPendingPlots(pendingPlots.filter((id) => id !== plotId));
-      setShowClaimModal(false);
-      setActivePlot(null);
-      navigate('/game');
-    },
-    onError: (error, plotId) => {
-      setErrorMsg(error.message);
-      setPendingPlots(pendingPlots.filter((id) => id !== plotId));
-    }
-  });
-
   const handlePlotClick = useCallback((plotId: number) => {
     if (plotDetails[plotId] || pendingPlots.includes(plotId)) return;
     
@@ -168,16 +152,31 @@ export default function OklahomaPlotMap() {
     setErrorMsg('');
   }, [plotDetails, pendingPlots, mapState?.canClaim]);
 
-  const handleClaimConfirm = () => {
-    if (activePlot === null) return;
+  const handleInitiatePayment = async () => {
+    if (activePlot === null || !currentUserId) return;
+    setIsFetchingIntent(true);
     setErrorMsg('');
-    claimMutation.mutate(activePlot);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+        body: { plotId: activePlot, pioneerId: currentUserId, alias: session?.alias || 'Anonymous' }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.clientSecret) {
+        setClientSecret(data.clientSecret);
+      }
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to initiate payment');
+    } finally {
+      setIsFetchingIntent(false);
+    }
   };
 
   const handleCancel = () => {
     setPendingPlots(pendingPlots.filter((id) => id !== activePlot));
     setShowClaimModal(false);
     setActivePlot(null);
+    setClientSecret('');
   };
 
   const handleLogout = () => {
@@ -286,29 +285,35 @@ export default function OklahomaPlotMap() {
               </div>
             )}
 
-            <div className="flex gap-3 justify-center">
-              <button 
-                onClick={handleCancel}
-                disabled={claimMutation.isPending}
-                className="flex-1 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleClaimConfirm}
-                disabled={claimMutation.isPending}
-                className="flex-[2] py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
-              >
-                {claimMutation.isPending ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Processing...
-                  </>
-                ) : (
-                  'Claim Plot'
-                )}
-              </button>
-            </div>
+            {clientSecret && activePlot !== null ? (
+              <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+                <ClaimCheckoutForm onCancel={handleCancel} plotId={activePlot} />
+              </Elements>
+            ) : (
+              <div className="flex gap-3 justify-center">
+                <button 
+                  onClick={handleCancel}
+                  disabled={isFetchingIntent}
+                  className="flex-1 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleInitiatePayment}
+                  disabled={isFetchingIntent}
+                  className="flex-[2] py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
+                >
+                  {isFetchingIntent ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    'Claim Plot'
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
