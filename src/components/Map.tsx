@@ -7,7 +7,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { getMapState } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { useKioskStore } from '../store/useKioskStore';
-import ClaimCheckoutForm from './ClaimCheckoutForm';
+import StripeCheckoutForm from './StripeCheckoutForm';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -287,7 +287,15 @@ export default function OklahomaPlotMap() {
 
             {clientSecret && activePlot !== null ? (
               <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-                <ClaimCheckoutForm onCancel={handleCancel} plotId={activePlot} />
+                <StripeCheckoutForm 
+                  onCancel={handleCancel} 
+                  onSuccess={() => {
+                    // Update local state so it proceeds to game
+                    queryClient.invalidateQueries({ queryKey: ['mapState'] });
+                    navigate('/game');
+                  }}
+                  buttonLabel={`Pay $15.00 for Plot #${activePlot}`}
+                />
               </Elements>
             ) : (
               <div className="flex gap-3 justify-center">

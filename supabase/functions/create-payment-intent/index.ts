@@ -25,9 +25,9 @@ Deno.serve(async (req) => {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    const { plotId, pioneerId, alias } = await req.json()
+    const { plotId, pioneerId, alias, type = 'claim' } = await req.json()
 
-    if (plotId === undefined || !pioneerId || !alias) {
+    if (!pioneerId || !alias) {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
@@ -47,29 +47,56 @@ Deno.serve(async (req) => {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    // Verify plot is not already claimed
-    const { data: plot } = await supabaseClient
-      .from('plots')
-      .select('owner_id')
-      .eq('id', plotId)
-      .single()
+    if (type === 'claim') {
+      if (plotId === undefined) {
+        return new Response(
+          JSON.stringify({ error: 'plotId is required for claiming.' }),
+          { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        )
+      }
 
-    if (plot?.owner_id) {
+      // Verify plot is not already claimed
+      const { data: plot } = await supabaseClient
+        .from('plots')
+        .select('owner_id')
+        .eq('id', plotId)
+        .single()
+
+      if (plot?.owner_id) {
+        return new Response(
+          JSON.stringify({ error: 'Plot is already claimed by someone else.' }),
+          { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        )
+      }
+
+      // Check if user already owns a plot
+      const { count: ownedPlotsCount } = await supabaseClient
+        .from('plots')
+        .select('*', { count: 'exact', head: true })
+        .eq('owner_id', pioneerId)
+
+      if (ownedPlotsCount && ownedPlotsCount > 0) {
+        return new Response(
+          JSON.stringify({ error: 'You have already claimed a plot. You can only claim one plot total.' }),
+          { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        )
+      }
+    } else if (type === 'visit') {
+      // Check if user actually owns a plot
+      const { count: ownedPlotsCount } = await supabaseClient
+        .from('plots')
+        .select('*', { count: 'exact', head: true })
+        .eq('owner_id', pioneerId)
+
+      if (!ownedPlotsCount || ownedPlotsCount === 0) {
+        return new Response(
+          JSON.stringify({ error: 'You do not own a plot to visit.' }),
+          { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        )
+      }
+    } else {
       return new Response(
-        JSON.stringify({ error: 'Plot is already claimed by someone else.' }),
-        { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-      )
-    }
-
-    // Check if user already owns a plot
-    const { count: ownedPlotsCount } = await supabaseClient
-      .from('plots')
-      .select('*', { count: 'exact', head: true })
-      .eq('owner_id', pioneerId)
-
-    if (ownedPlotsCount && ownedPlotsCount > 0) {
-      return new Response(
-        JSON.stringify({ error: 'You have already claimed a plot. You can only claim one plot total.' }),
+        JSON.stringify({ error: 'Invalid type parameter.' }),
         { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
       )
     }
@@ -79,7 +106,8 @@ Deno.serve(async (req) => {
       amount: 1500, // $15.00
       currency: 'usd',
       metadata: {
-        plot_id: plotId.toString(),
+        type: type,
+        plot_id: plotId !== undefined ? plotId.toString() : '',
         pioneer_id: pioneerId,
         alias: alias
       },

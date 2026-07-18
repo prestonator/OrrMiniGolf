@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { useKioskStore } from "../store/useKioskStore";
+import { supabase } from "../utils/supabase";
+import StripeCheckoutForm from "../components/StripeCheckoutForm";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 export default function Payment() {
-  const [paymentStatus, setPaymentStatus] = useState<
-    "idle" | "processing" | "success"
-  >("idle");
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "success">("idle");
   const [receiptCode, setReceiptCode] = useState<string>("");
+  const [clientSecret, setClientSecret] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isFetchingIntent, setIsFetchingIntent] = useState(true);
+
   const navigate = useNavigate();
   const setTimerPaused = useKioskStore((state) => state.setTimerPaused);
 
@@ -16,15 +24,29 @@ export default function Payment() {
     return () => setTimerPaused(false);
   }, [setTimerPaused]);
 
-  const handlePayment = () => {
-    setPaymentStatus("processing");
-    // Simulate payment processing time (mock Stripe Edge function call)
-    setTimeout(() => {
-      // Generate a random 5-character receipt code
-      const code = Math.random().toString(36).substring(2, 7).toUpperCase();
-      setReceiptCode(code);
-      setPaymentStatus("success");
-    }, 2000);
+  useEffect(() => {
+    async function initPayment() {
+      try {
+        const { data, error } = await supabase.functions.invoke('create-quick-round-intent');
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        if (data?.clientSecret) {
+          setClientSecret(data.clientSecret);
+        }
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : 'Failed to initiate payment');
+      } finally {
+        setIsFetchingIntent(false);
+      }
+    }
+    initPayment();
+  }, []);
+
+  const handleSuccess = () => {
+    // Generate a random 5-character receipt code
+    const code = Math.random().toString(36).substring(2, 7).toUpperCase();
+    setReceiptCode(code);
+    setPaymentStatus("success");
   };
 
   // Automatic redirect back to home after 30 seconds on the success screen
@@ -59,31 +81,31 @@ export default function Payment() {
               </p>
             </div>
 
-            <button
-              onClick={handlePayment}
-              className="w-full bg-[#5c3a21] hover:bg-[#4a2e1a] text-[#f4ecd8] font-bold text-xl py-4 px-4 rounded-sm border-2 border-[#3a2212] shadow-md transition-all active:translate-y-1 uppercase tracking-wide mb-4"
-            >
-              Pay with Card
-            </button>
-            <Link
-              to="/"
-              className="text-[#8b2e1f] font-semibold underline hover:text-[#6e2418]"
-            >
-              Cancel
-            </Link>
+            {isFetchingIntent ? (
+              <div className="py-4">
+                <h2 className="text-xl font-bold text-[#3a2212] mb-4 font-serif uppercase tracking-wider animate-pulse">
+                  Loading Payment...
+                </h2>
+              </div>
+            ) : errorMsg ? (
+              <div className="py-4">
+                <div className="p-3 bg-red-50 text-red-600 rounded-lg border border-red-100 mb-4">
+                  {errorMsg}
+                </div>
+              </div>
+            ) : clientSecret ? (
+              <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+                <StripeCheckoutForm 
+                  onCancel={() => navigate("/")} 
+                  onSuccess={handleSuccess}
+                  buttonLabel="Pay $15.00"
+                />
+              </Elements>
+            ) : null}
           </>
         )}
 
-        {paymentStatus === "processing" && (
-          <div className="py-12">
-            <h2 className="text-2xl font-bold text-[#3a2212] mb-4 font-serif uppercase tracking-wider animate-pulse">
-              Processing Payment...
-            </h2>
-            <p className="text-[#5c3a21] italic">
-              Please do not remove your card.
-            </p>
-          </div>
-        )}
+
 
         {paymentStatus === "success" && (
           <div className="py-4">

@@ -41,10 +41,11 @@ Deno.serve(async (req) => {
 
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent
+      const type = paymentIntent.metadata.type || 'claim'
       const plotIdStr = paymentIntent.metadata.plot_id
       const pioneerId = paymentIntent.metadata.pioneer_id
 
-      if (plotIdStr && pioneerId) {
+      if (type === 'claim' && plotIdStr && pioneerId) {
         const plotId = parseInt(plotIdStr, 10)
 
         // Initialize Supabase Client with Service Role Key to bypass RLS

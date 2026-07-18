@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
-import { useNavigate } from 'react-router-dom';
 import { useKioskStore } from '../store/useKioskStore';
 
-interface ClaimCheckoutFormProps {
+interface StripeCheckoutFormProps {
   onCancel: () => void;
-  plotId: number;
+  onSuccess: () => void;
+  buttonLabel: string;
+  cancelLabel?: string;
 }
 
-export default function ClaimCheckoutForm({ onCancel, plotId }: ClaimCheckoutFormProps) {
+export default function StripeCheckoutForm({ onCancel, onSuccess, buttonLabel, cancelLabel = "Cancel" }: StripeCheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
-  const navigate = useNavigate();
   const setIsProcessingPayment = useKioskStore(state => state.setIsProcessingPayment);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -34,8 +34,7 @@ export default function ClaimCheckoutForm({ onCancel, plotId }: ClaimCheckoutFor
     if (error) {
       setErrorMessage(error.message || 'An unexpected error occurred.');
     } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-      // Payment successful, redirect to 3D plot screen
-      navigate('/game');
+      onSuccess();
     }
   };
 
@@ -53,14 +52,14 @@ export default function ClaimCheckoutForm({ onCancel, plotId }: ClaimCheckoutFor
           onClick={onCancel}
           className="flex-1 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
         >
-          Cancel
+          {cancelLabel}
         </button>
         <button 
           type="submit"
           disabled={!stripe}
           className="flex-[2] py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30 active:scale-[0.98] disabled:opacity-70"
         >
-          Pay $15.00 for Plot #{plotId}
+          {buttonLabel}
         </button>
       </div>
     </form>

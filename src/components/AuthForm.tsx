@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../utils/supabase";
+import { getMapState } from "../utils/api";
 import { useKioskStore } from "../store/useKioskStore";
 import {
   Pickaxe,
@@ -55,13 +56,24 @@ export function AuthForm({
       if (!data || !data.success) throw new Error("Invalid PIN");
       return data; // Expected to return { success: true, user: { id: string, username: string } }
     },
-    onSuccess: (_data, variables) => {
-      // Assume the selected user is validated
+    onSuccess: async (_data, variables) => {
+      const pioneerId = selectedUser?.id || "";
       setSession({
-        pioneerId: selectedUser?.id || "",
+        pioneerId,
         alias: variables.username,
       });
-      navigate("/map");
+      
+      try {
+        const mapState = await getMapState(pioneerId);
+        if (mapState.myPlotId !== null) {
+          navigate("/visit-payment");
+        } else {
+          navigate("/map");
+        }
+      } catch (err) {
+        // Fallback to map if query fails
+        navigate("/map");
+      }
     },
     onError: (error) => {
       setLocalError(error.message || "An unexpected error occurred");
