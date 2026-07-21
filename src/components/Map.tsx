@@ -2,14 +2,13 @@ import { useState, useEffect, useRef, memo, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { getMapState } from '../utils/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getMapState, claimPlot } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { useKioskStore } from '../store/useKioskStore';
-import StripeCheckoutForm from './StripeCheckoutForm';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const cityTargets: Record<string, number> = { Norman: 1150, OKC: 650, Guthrie: 250, Stillwater: 35, Kingfisher: 205, "El Reno": 645 };
+const cities = ["Kingfisher", "Guthrie", "Stillwater", "OKC", "Norman", "El Reno"];
 
 const PlotSquare = memo(({ 
   idx, 
@@ -79,8 +78,18 @@ export default function OklahomaPlotMap() {
   const [activePlot, setActivePlot] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [clientSecret, setClientSecret] = useState('');
-  const [isFetchingIntent, setIsFetchingIntent] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [hasDismissedCityChoice, setHasDismissedCityChoice] = useState(false);
+
+  const showCityChoice = !hasDismissedCityChoice && !isLoading && mapState?.myPlotId === null && imageLoaded;
+
+  const handleCityChoice = (city: string) => {
+    setHasDismissedCityChoice(true);
+    const targetPlotId = cityTargets[city];
+    setTimeout(() => {
+      transformWrapperRef.current?.zoomToElement(`plot-${targetPlotId}`, 3, 800);
+    }, 100);
+  };
 
   const plotDetails = useMemo(() => {
     const details: Record<number, { initials: string, isMine: boolean }> = {};
@@ -154,21 +163,21 @@ export default function OklahomaPlotMap() {
 
   const handleInitiatePayment = async () => {
     if (activePlot === null || !currentUserId) return;
-    setIsFetchingIntent(true);
+    setIsProcessing(true);
     setErrorMsg('');
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-        body: { plotId: activePlot, pioneerId: currentUserId, alias: session?.alias || 'Anonymous' }
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data?.clientSecret) {
-        setClientSecret(data.clientSecret);
-      }
+      // Simulate network delay for payment
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const { error } = await claimPlot(activePlot, currentUserId);
+      if (error) throw new Error(error);
+      
+      queryClient.invalidateQueries({ queryKey: ['mapState'] });
+      navigate('/game');
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Failed to initiate payment');
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to claim plot');
     } finally {
-      setIsFetchingIntent(false);
+      setIsProcessing(false);
     }
   };
 
@@ -176,7 +185,6 @@ export default function OklahomaPlotMap() {
     setPendingPlots(pendingPlots.filter((id) => id !== activePlot));
     setShowClaimModal(false);
     setActivePlot(null);
-    setClientSecret('');
   };
 
   const handleLogout = () => {
@@ -228,6 +236,44 @@ export default function OklahomaPlotMap() {
           ))
         )}
       </div>
+
+      <AnimatePresence>
+        {showCityChoice && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-[2rem] p-8 shadow-2xl max-w-2xl w-full text-center mx-4"
+            >
+              <h2 className="text-3xl font-extrabold text-gray-900 mb-8 tracking-tight">Claim a Specific Plot</h2>
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                {cities.map(city => (
+                  <button
+                    key={city}
+                    onClick={() => handleCityChoice(city)}
+                    className="py-5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xl transition-colors shadow-md active:scale-95"
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setHasDismissedCityChoice(true)}
+                className="text-lg font-semibold text-gray-500 hover:text-gray-700 active:text-gray-900 py-3 px-8 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors active:scale-95"
+              >
+                Skip and see entire map
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <TransformWrapper
         ref={transformWrapperRef}
@@ -285,43 +331,32 @@ export default function OklahomaPlotMap() {
               </div>
             )}
 
-            {clientSecret && activePlot !== null ? (
-              <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-                <StripeCheckoutForm 
-                  onCancel={handleCancel} 
-                  onSuccess={() => {
-                    // Update local state so it proceeds to game
-                    queryClient.invalidateQueries({ queryKey: ['mapState'] });
-                    navigate('/game');
-                  }}
-                  buttonLabel={`Pay $15.00 for Plot #${activePlot}`}
-                />
-              </Elements>
-            ) : (
-              <div className="flex gap-3 justify-center">
-                <button 
-                  onClick={handleCancel}
-                  disabled={isFetchingIntent}
-                  className="flex-1 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleInitiatePayment}
-                  disabled={isFetchingIntent}
-                  className="flex-[2] py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
-                >
-                  {isFetchingIntent ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    'Claim Plot'
-                  )}
-                </button>
-              </div>
-            )}
+            <div className="flex gap-3 justify-center">
+              <button 
+                onClick={handleCancel}
+                disabled={isProcessing}
+                className="flex-1 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleInitiatePayment}
+                disabled={isProcessing}
+                className="flex-[2] py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
+              >
+                {isProcessing ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  `Pay $15.00 for Plot #${activePlot}`
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

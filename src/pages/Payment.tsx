@@ -1,19 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { useKioskStore } from "../store/useKioskStore";
-import { supabase } from "../utils/supabase";
-import StripeCheckoutForm from "../components/StripeCheckoutForm";
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 export default function Payment() {
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "success">("idle");
   const [receiptCode, setReceiptCode] = useState<string>("");
-  const [clientSecret, setClientSecret] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [isFetchingIntent, setIsFetchingIntent] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const navigate = useNavigate();
   const setTimerPaused = useKioskStore((state) => state.setTimerPaused);
@@ -24,23 +16,13 @@ export default function Payment() {
     return () => setTimerPaused(false);
   }, [setTimerPaused]);
 
-  useEffect(() => {
-    async function initPayment() {
-      try {
-        const { data, error } = await supabase.functions.invoke('create-quick-round-intent');
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        if (data?.clientSecret) {
-          setClientSecret(data.clientSecret);
-        }
-      } catch (err) {
-        setErrorMsg(err instanceof Error ? err.message : 'Failed to initiate payment');
-      } finally {
-        setIsFetchingIntent(false);
-      }
-    }
-    initPayment();
-  }, []);
+  const handleSimulatePayment = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      handleSuccess();
+    }, 1500); // Simulate network delay
+  };
 
   const handleSuccess = () => {
     // Generate a random 5-character receipt code
@@ -81,31 +63,31 @@ export default function Payment() {
               </p>
             </div>
 
-            {isFetchingIntent ? (
-              <div className="py-4">
-                <h2 className="text-xl font-bold text-[#3a2212] mb-4 font-serif uppercase tracking-wider animate-pulse">
-                  Loading Payment...
-                </h2>
-              </div>
-            ) : errorMsg ? (
-              <div className="py-4">
-                <div className="p-3 bg-red-50 text-red-600 rounded-lg border border-red-100 mb-4">
-                  {errorMsg}
-                </div>
-              </div>
-            ) : clientSecret ? (
-              <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-                <StripeCheckoutForm 
-                  onCancel={() => navigate("/")} 
-                  onSuccess={handleSuccess}
-                  buttonLabel="Pay $15.00"
-                />
-              </Elements>
-            ) : null}
+            <div className="flex flex-col gap-4">
+              <button
+                onClick={handleSimulatePayment}
+                disabled={isProcessing}
+                className="w-full bg-[#3a2212] hover:bg-[#5c3a21] disabled:bg-[#8c7462] text-[#f4ecd8] font-bold text-xl py-4 px-4 rounded-sm border-2 border-[#3a2212] shadow-md transition-all active:translate-y-1 uppercase tracking-wide flex justify-center items-center"
+              >
+                {isProcessing ? (
+                  <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  "Pay $15.00"
+                )}
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                disabled={isProcessing}
+                className="w-full bg-transparent hover:bg-[#e8dcc4] text-[#5c3a21] font-bold text-lg py-3 px-4 rounded-sm border-2 border-[#5c3a21] transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
           </>
         )}
-
-
 
         {paymentStatus === "success" && (
           <div className="py-4">

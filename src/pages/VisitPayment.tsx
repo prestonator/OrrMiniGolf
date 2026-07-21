@@ -1,21 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { useKioskStore } from "../store/useKioskStore";
-import { supabase } from "../utils/supabase";
-import StripeCheckoutForm from "../components/StripeCheckoutForm";
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 export default function VisitPayment() {
   const navigate = useNavigate();
   const session = useKioskStore((state) => state.session);
   const setTimerPaused = useKioskStore((state) => state.setTimerPaused);
   
-  const [clientSecret, setClientSecret] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [isFetchingIntent, setIsFetchingIntent] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     // Pause the global 45s timer while on this checkout screen
@@ -24,31 +16,21 @@ export default function VisitPayment() {
   }, [setTimerPaused]);
 
   useEffect(() => {
-    async function initPayment() {
-      if (!session?.pioneerId) {
-        navigate('/');
-        return;
-      }
-      try {
-        const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-          body: { pioneerId: session.pioneerId, alias: session.alias || 'Anonymous', type: 'visit' }
-        });
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        if (data?.clientSecret) {
-          setClientSecret(data.clientSecret);
-        }
-      } catch (err) {
-        setErrorMsg(err instanceof Error ? err.message : 'Failed to initiate payment');
-      } finally {
-        setIsFetchingIntent(false);
-      }
+    if (!session?.pioneerId) {
+      navigate('/');
     }
-    initPayment();
   }, [session, navigate]);
 
   const handleCancel = () => {
     navigate('/');
+  };
+
+  const handleSimulatePayment = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      handleSuccess();
+    }, 1500);
   };
 
   const handleSuccess = () => {
@@ -68,46 +50,43 @@ export default function VisitPayment() {
           Welcome back, {session?.alias}! Ready to hit the links again?
         </p>
 
-        {isFetchingIntent ? (
-          <div className="py-12">
-            <h2 className="text-2xl font-bold text-[#3a2212] mb-4 font-serif uppercase tracking-wider animate-pulse">
-              Loading Payment...
-            </h2>
+        <div className="text-left">
+          <div className="bg-[#e8dcc4] p-6 rounded border border-[#8c7462] mb-6">
+            <p className="text-[#5c3a21] font-semibold text-lg flex justify-between">
+              <span>Homestead Visit</span>
+              <span>$15.00</span>
+            </p>
+            <div className="border-t border-[#8c7462] my-4 border-dashed"></div>
+            <p className="text-[#3a2212] font-bold text-xl flex justify-between">
+              <span>Total</span>
+              <span>$15.00</span>
+            </p>
           </div>
-        ) : errorMsg ? (
-          <div className="py-12">
-            <div className="p-4 bg-red-50 text-red-600 rounded-lg border border-red-100 mb-6">
-              {errorMsg}
-            </div>
+          
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={handleSimulatePayment}
+              disabled={isProcessing}
+              className="w-full bg-[#3a2212] hover:bg-[#5c3a21] disabled:bg-[#8c7462] text-[#f4ecd8] font-bold text-xl py-4 px-4 rounded-sm border-2 border-[#3a2212] shadow-md transition-all active:translate-y-1 uppercase tracking-wide flex justify-center items-center"
+            >
+              {isProcessing ? (
+                <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                "Pay $15.00"
+              )}
+            </button>
             <button
               onClick={handleCancel}
-              className="w-full bg-[#5c3a21] hover:bg-[#4a2e1a] text-[#f4ecd8] font-bold text-xl py-4 px-4 rounded-sm border-2 border-[#3a2212] shadow-md transition-all active:translate-y-1 uppercase tracking-wide"
+              disabled={isProcessing}
+              className="w-full bg-transparent hover:bg-[#e8dcc4] text-[#5c3a21] font-bold text-lg py-3 px-4 rounded-sm border-2 border-[#5c3a21] transition-all disabled:opacity-50"
             >
-              Back to Home
+              Cancel
             </button>
           </div>
-        ) : clientSecret ? (
-          <div className="text-left">
-            <div className="bg-[#e8dcc4] p-6 rounded border border-[#8c7462] mb-6">
-              <p className="text-[#5c3a21] font-semibold text-lg flex justify-between">
-                <span>Homestead Visit</span>
-                <span>$15.00</span>
-              </p>
-              <div className="border-t border-[#8c7462] my-4 border-dashed"></div>
-              <p className="text-[#3a2212] font-bold text-xl flex justify-between">
-                <span>Total</span>
-                <span>$15.00</span>
-              </p>
-            </div>
-            <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-              <StripeCheckoutForm 
-                onCancel={handleCancel} 
-                onSuccess={handleSuccess}
-                buttonLabel="Pay $15.00"
-              />
-            </Elements>
-          </div>
-        ) : null}
+        </div>
       </div>
     </div>
   );
