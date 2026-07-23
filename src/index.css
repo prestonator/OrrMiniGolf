@@ -3,13 +3,22 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --color-cream: #f2e3da;
+  --color-dark-blue: #132c3f;
+  --color-red: #99182a;
+  --color-light-blue: #3883bd;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-cream: var(--color-cream);
+  --color-dark-blue: var(--color-dark-blue);
+  --color-red: var(--color-red);
+  --color-light-blue: var(--color-light-blue);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: "Playfair Display", serif;
 }
 
 @media (prefers-color-scheme: dark) {
