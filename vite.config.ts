@@ -47,7 +47,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 10485760,
+        maximumFileSizeToCacheInBytes: 31457280,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,glb,gltf,jpg,jpeg}"],
         navigateFallbackDenylist: [/^\/rest\/v1/, /^\/rpc/, /api\.stripe\.com/],
         runtimeCaching: [

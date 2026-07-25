@@ -4,7 +4,7 @@ import { useGLTF } from "@react-three/drei";
 import { router } from "./routes";
 
 // Preload 3D asset at module scope
-useGLTF.preload("/homestead.glb");
+useGLTF.preload("/homestead-final-transformed.glb");
 
 const queryClient = new QueryClient();
 

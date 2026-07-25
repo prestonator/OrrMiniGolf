@@ -1,7 +1,7 @@
 import { useState, Suspense, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { Homestead2 } from "./Homestead";
+import { Model } from "./Homestead-final";
 import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { getUserTier } from '../utils/api';
@@ -142,7 +142,7 @@ export default function Scene() {
         />
 
         <Suspense fallback={null}>
-          <Homestead2 currentStage={currentStage} />
+          <Model currentStage={currentStage} />
           
           {/* Post Processing Composer applies to everything */}
           <EffectComposer>
