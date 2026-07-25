@@ -1,5 +1,5 @@
 import { useState, Suspense, useEffect } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, useTexture } from "@react-three/drei";
 import { Model } from "./Homestead-final";
 import {
@@ -24,33 +24,6 @@ function CustomEnvironment() {
       <Environment map={texture} background="only" blur={0.05} />
     </>
   );
-}
-
-function ResponsiveCamera() {
-  const { camera, size } = useThree();
-
-  useEffect(() => {
-    // Check if we are on a narrow mobile screen
-    const isMobile = size.width < 768;
-
-    // Type assertion used since we know it's a PerspectiveCamera
-    const cam = camera as THREE.PerspectiveCamera;
-
-    // Drastically lower FOV for the sleek, flat "isometric diorama" look
-    cam.fov = isMobile ? 35 : 20;
-
-    // Because we lowered the FOV, we must pull the camera further back to fit the scene.
-    // Positioned in the negative-X corner to get a nice diagonal strategy-game angle.
-    if (isMobile) {
-      cam.position.set(-200, 160, 200);
-    } else {
-      cam.position.set(-160, 120, 160);
-    }
-
-    cam.updateProjectionMatrix();
-  }, [size, camera]);
-
-  return null;
 }
 
 export default function Scene() {
