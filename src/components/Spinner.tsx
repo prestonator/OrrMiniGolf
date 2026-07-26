@@ -11,7 +11,6 @@ export interface SpinnerProps {
 export function Spinner({ 
   size = 'md',
   className = '',
-  color,
   text, 
   subtext
 }: SpinnerProps) {
