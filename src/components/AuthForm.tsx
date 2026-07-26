@@ -68,7 +68,7 @@ export function AuthForm({
         } else {
           navigate("/map");
         }
-      } catch (err) {
+      } catch {
         // Fallback to map if query fails
         navigate("/map");
       }
