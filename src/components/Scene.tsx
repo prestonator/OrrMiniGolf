@@ -1,6 +1,6 @@
 import { useState, Suspense, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment, useTexture } from "@react-three/drei";
+import { Environment, useTexture, useProgress } from "@react-three/drei";
 import { Model } from "./Homestead-final";
 import {
   EffectComposer,
@@ -53,6 +53,32 @@ const getNextItemNameForStage = (stage: number) => {
   return items[stage] || "Windmill";
 };
 
+function LoadingOverlay() {
+  const { active, progress } = useProgress();
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (!active && progress === 100) {
+      const t = setTimeout(() => setVisible(false), 300);
+      return () => clearTimeout(t);
+    } else if (active) {
+      setVisible(true);
+    }
+  }, [active, progress]);
+
+  if (!visible) return null;
+
+  return (
+    <div className="absolute inset-0 z-50 bg-cream flex flex-col items-center justify-center transition-opacity duration-500">
+      <Spinner 
+        size="lg" 
+        text={`Loading Homestead... ${progress > 0 ? `${Math.round(progress)}%` : ""}`} 
+        subtext="Pioneering the frontier..."
+      />
+    </div>
+  );
+}
+
 export default function Scene() {
   const navigate = useNavigate();
   const session = useKioskStore((state) => state.session);
@@ -83,17 +109,19 @@ export default function Scene() {
 
   if (loading) {
     return (
-      <div className="w-full h-screen bg-cream flex flex-col items-center justify-center gap-3">
-        <Spinner size="lg" color="border-dark-blue" />
-        <span className="text-dark-blue font-serif font-bold text-lg uppercase tracking-wide">
-          Loading Homestead...
-        </span>
+      <div className="w-full h-screen bg-cream flex flex-col items-center justify-center">
+        <Spinner 
+          size="lg" 
+          text="Loading Homestead..." 
+          subtext="Pioneering the frontier..." 
+        />
       </div>
     );
   }
 
   return (
     <div className="relative w-full h-screen">
+      <LoadingOverlay />
       {/* 1. Welcome Banner (Top Header) */}
       <div className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 max-w-xl w-[95vw] sm:w-auto pointer-events-auto">
         <div className="bg-cream border border-dark-blue/60 p-[3px] shadow-2xl rounded-sm w-full">

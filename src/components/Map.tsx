@@ -327,7 +327,12 @@ export default function OklahomaPlotMap() {
 
       {showClaimModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200 p-4">
-          <div className="relative w-full max-w-md bg-cream p-1 shadow-2xl transform animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-md bg-cream p-1 shadow-2xl transform animate-in zoom-in-95 duration-200 overflow-hidden">
+            {isProcessing && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+                <Spinner size="lg" />
+              </div>
+            )}
             <div className="border border-dark-blue/60 p-[3px] h-full w-full">
               <div className="border border-dark-blue/60 p-6 sm:p-8 bg-cream text-center flex flex-col">
                 <h2 className="text-2xl font-bold text-dark-blue mb-3 font-serif uppercase tracking-wider">
@@ -357,14 +362,7 @@ export default function OklahomaPlotMap() {
                     disabled={isProcessing}
                     className="flex-[2] py-3 px-4 rounded font-bold text-cream bg-light-blue hover:bg-light-blue/90 transition-all shadow-lg shadow-light-blue/30 uppercase tracking-wide text-sm sm:text-base active:translate-y-0.5 disabled:opacity-70 flex items-center justify-center gap-2"
                   >
-                    {isProcessing ? (
-                      <>
-                        <Spinner size="sm" color="border-white" />
-                        Processing...
-                      </>
-                    ) : (
-                      `Pay $15.00 for Plot #${activePlot}`
-                    )}
+                    {`Pay $15.00 for Plot #${activePlot}`}
                   </button>
                 </div>
               </div>
