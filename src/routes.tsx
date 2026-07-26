@@ -5,7 +5,6 @@ import Game from './pages/Game'
 import Login from './pages/Login'
 import MapPage from './pages/Map'
 import Payment from './pages/Payment'
-import VisitPayment from './pages/VisitPayment'
 
 export const router = createBrowserRouter([
   {
@@ -15,8 +14,9 @@ export const router = createBrowserRouter([
       { path: '/game', element: <Game /> },
       { path: '/login', element: <Login /> },
       { path: '/map', element: <MapPage /> },
-      { path: '/quick-round-payment', element: <Payment /> },
-      { path: '/visit-payment', element: <VisitPayment /> },
+      { path: '/quick-round-payment', element: <Payment mode="quick-round" /> },
+      { path: '/visit-payment', element: <Payment mode="visit" /> },
     ],
   },
 ])
+
