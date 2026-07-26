@@ -69,7 +69,9 @@ interface StageGroupProps {
 
 function PopInGroup({ stage, currentStage, children }: StageGroupProps) {
   const { scale } = useSpring({
-    scale: currentStage >= stage ? 1 : 0,
+    from: { scale: 0 },
+    to: { scale: currentStage >= stage ? 1 : 0 },
+    delay: (stage - 1) * 200,
     config: { tension: 170, friction: 15 },
   });
   return <a.group scale={scale}>{children}</a.group>;
@@ -77,8 +79,12 @@ function PopInGroup({ stage, currentStage, children }: StageGroupProps) {
 
 function DropDownGroup({ stage, currentStage, children }: StageGroupProps) {
   const { scale, position } = useSpring({
-    scale: currentStage >= stage ? 1 : 0,
-    position: currentStage >= stage ? [0, 0, 0] : [0, 0, 5000],
+    from: { scale: 0, position: [0, 0, 5000] },
+    to: { 
+      scale: currentStage >= stage ? 1 : 0, 
+      position: currentStage >= stage ? [0, 0, 0] : [0, 0, 5000] 
+    },
+    delay: (stage - 1) * 200,
     config: { tension: 120, friction: 14 },
   });
   return (
