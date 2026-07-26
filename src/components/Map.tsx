@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getMapState, claimPlot } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { useKioskStore } from '../store/useKioskStore';
+import { Spinner } from './Spinner';
 
 const cityTargets: Record<string, number> = { Norman: 1150, OKC: 650, Guthrie: 250, Stillwater: 35, Kingfisher: 205, "El Reno": 645 };
 const cities = ["Kingfisher", "Guthrie", "Stillwater", "OKC", "Norman", "El Reno"];
@@ -195,7 +196,7 @@ export default function OklahomaPlotMap() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-orange-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+        <Spinner size="lg" color="border-[#3a2212]" />
       </div>
     );
   }
@@ -203,7 +204,7 @@ export default function OklahomaPlotMap() {
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-orange-50 select-none">
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 bg-white/90 backdrop-blur-md px-6 py-4 rounded-xl shadow-lg w-[calc(100%-2rem)] max-w-4xl flex justify-between items-center border border-white/20">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 tracking-tight">Oklahoma Land Rush (1889)</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 tracking-tight font-serif">Oklahoma Land Rush (1889)</h1>
         <div className="flex gap-4 items-center">
           <div className="text-sm sm:text-lg font-semibold text-blue-700 bg-blue-100 px-4 py-1.5 rounded-full shadow-inner">
             Tier: {mapState?.userTier || 0}
@@ -218,7 +219,7 @@ export default function OklahomaPlotMap() {
       </div>
 
       <div className="absolute right-6 top-32 z-10 bg-white/90 backdrop-blur-md px-4 py-4 rounded-xl shadow-lg w-64 border border-white/20 max-h-[60vh] overflow-y-auto flex flex-col gap-3 pointer-events-auto">
-        <h2 className="text-lg font-bold text-gray-800 tracking-tight border-b pb-2">Leaderboard</h2>
+        <h2 className="text-lg font-bold text-gray-800 tracking-tight border-b pb-2 font-serif">Leaderboard</h2>
         {leaderboard.length === 0 ? (
           <div className="text-sm text-gray-500 italic">No plots claimed yet.</div>
         ) : (
@@ -243,33 +244,42 @@ export default function OklahomaPlotMap() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-[2rem] p-8 shadow-2xl max-w-2xl w-full text-center mx-4"
+              className="relative bg-cream p-1 shadow-2xl max-w-2xl w-full text-center mx-4"
             >
-              <h2 className="text-3xl font-extrabold text-gray-900 mb-8 tracking-tight">Claim a Specific Plot</h2>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                {cities.map(city => (
+              <div className="border border-dark-blue/60 p-[3px] h-full w-full">
+                <div className="border border-dark-blue/60 p-6 sm:p-8 bg-cream flex flex-col items-center">
+                  <h2 className="text-3xl font-bold text-dark-blue mb-6 font-serif uppercase tracking-wide">
+                    Claim a Specific Plot
+                  </h2>
+                  <p className="text-dark-blue/80 mb-6 font-medium text-base">
+                    Select a region to zoom in and stake your land claim.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 w-full">
+                    {cities.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => handleCityChoice(city)}
+                        className="py-4 px-4 rounded bg-light-blue hover:bg-light-blue/90 active:bg-light-blue/80 text-cream font-bold text-lg transition-all shadow-md shadow-light-blue/30 uppercase tracking-wide active:translate-y-0.5"
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
                   <button
-                    key={city}
-                    onClick={() => handleCityChoice(city)}
-                    className="py-5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xl transition-colors shadow-md active:scale-95"
+                    onClick={() => setHasDismissedCityChoice(true)}
+                    className="w-full sm:w-auto text-base font-bold text-dark-blue hover:bg-dark-blue/5 py-3 px-8 rounded border-2 border-dark-blue transition-all uppercase tracking-wide"
                   >
-                    {city}
+                    Skip and see entire map
                   </button>
-                ))}
+                </div>
               </div>
-              <button
-                onClick={() => setHasDismissedCityChoice(true)}
-                className="text-lg font-semibold text-gray-500 hover:text-gray-700 active:text-gray-900 py-3 px-8 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors active:scale-95"
-              >
-                Skip and see entire map
-              </button>
             </motion.div>
           </motion.div>
         )}
@@ -316,46 +326,48 @@ export default function OklahomaPlotMap() {
       </TransformWrapper>
 
       {showClaimModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center border border-white/20 transform animate-in zoom-in-95 duration-200">
-            
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Confirm Claim</h2>
-            <p className="text-gray-600 mb-6">
-              You are about to claim <strong>Plot #{activePlot}</strong>. <br /> 
-              Confirm your claim to take ownership and increase your tier.
-            </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200 p-4">
+          <div className="relative w-full max-w-md bg-cream p-1 shadow-2xl transform animate-in zoom-in-95 duration-200">
+            <div className="border border-dark-blue/60 p-[3px] h-full w-full">
+              <div className="border border-dark-blue/60 p-6 sm:p-8 bg-cream text-center flex flex-col">
+                <h2 className="text-2xl font-bold text-dark-blue mb-3 font-serif uppercase tracking-wider">
+                  Confirm Claim
+                </h2>
+                <p className="text-dark-blue/90 mb-6 font-medium text-base">
+                  You are about to claim <strong className="font-bold text-red font-serif">Plot #{activePlot}</strong>. <br /> 
+                  Confirm your claim to take ownership and increase your tier.
+                </p>
 
-            {errorMsg && (
-              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
-                {errorMsg}
-              </div>
-            )}
-
-            <div className="flex gap-3 justify-center">
-              <button 
-                onClick={handleCancel}
-                disabled={isProcessing}
-                className="flex-1 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleInitiatePayment}
-                disabled={isProcessing}
-                className="flex-[2] py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
-              >
-                {isProcessing ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </>
-                ) : (
-                  `Pay $15.00 for Plot #${activePlot}`
+                {errorMsg && (
+                  <div className="mb-4 p-3 bg-red/10 text-red text-sm rounded font-bold border border-red/30">
+                    {errorMsg}
+                  </div>
                 )}
-              </button>
+
+                <div className="flex gap-3 justify-center">
+                  <button 
+                    onClick={handleCancel}
+                    disabled={isProcessing}
+                    className="flex-1 py-3 px-4 rounded font-bold text-dark-blue border-2 border-dark-blue bg-transparent hover:bg-dark-blue/5 transition-colors uppercase tracking-wide text-sm sm:text-base disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleInitiatePayment}
+                    disabled={isProcessing}
+                    className="flex-[2] py-3 px-4 rounded font-bold text-cream bg-light-blue hover:bg-light-blue/90 transition-all shadow-lg shadow-light-blue/30 uppercase tracking-wide text-sm sm:text-base active:translate-y-0.5 disabled:opacity-70 flex items-center justify-center gap-2"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Spinner size="sm" color="border-white" />
+                        Processing...
+                      </>
+                    ) : (
+                      `Pay $15.00 for Plot #${activePlot}`
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

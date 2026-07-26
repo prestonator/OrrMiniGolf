@@ -1,6 +1,6 @@
 import { useState, Suspense, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, useTexture } from "@react-three/drei";
+import { Environment, useTexture } from "@react-three/drei";
 import { Model } from "./Homestead-final";
 import {
   EffectComposer,
@@ -13,6 +13,8 @@ import { getUserTier } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { useKioskStore } from "../store/useKioskStore";
 import { ToneMappingMode } from "postprocessing";
+import { Spinner } from "./Spinner";
+import { CameraPanController } from "./CameraPanController";
 
 function CustomEnvironment() {
   const texture = useTexture("/bgSky.png");
@@ -25,6 +27,31 @@ function CustomEnvironment() {
     </>
   );
 }
+
+const getItemNameForTier = (tier: number) => {
+  const items: Record<number, string> = {
+    1: "Wild Grass",
+    2: "Fertile Soil",
+    3: "Oak Trees & Timber",
+    4: "Log Cabin",
+    5: "Windmill",
+    6: "Pine Orchard",
+    7: "Water Well",
+  };
+  return items[tier] || "Log Cabin";
+};
+
+const getNextItemNameForStage = (stage: number) => {
+  const items: Record<number, string> = {
+    2: "Fertile Soil",
+    3: "Oak Trees & Timber",
+    4: "Log Cabin",
+    5: "Windmill",
+    6: "Pine Orchard",
+    7: "Water Well",
+  };
+  return items[stage] || "Windmill";
+};
 
 export default function Scene() {
   const navigate = useNavigate();
@@ -56,30 +83,54 @@ export default function Scene() {
 
   if (loading) {
     return (
-      <div className="w-full h-screen bg-[#e69e45] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/50 border-t-white"></div>
+      <div className="w-full h-screen bg-cream flex flex-col items-center justify-center gap-3">
+        <Spinner size="lg" color="border-dark-blue" />
+        <span className="text-dark-blue font-serif font-bold text-lg uppercase tracking-wide">
+          Loading Homestead...
+        </span>
       </div>
     );
   }
 
   return (
     <div className="relative w-full h-screen">
-      {/* UI Overlay */}
-      <div className="absolute top-4 sm:top-10 left-1/2 -translate-x-1/2 z-10 flex flex-wrap gap-2 sm:gap-4 bg-white/80 backdrop-blur-md p-2 sm:p-4 rounded-xl sm:rounded-2xl shadow-xl border border-white/20 items-center justify-center w-[95vw] sm:w-auto max-w-lg">
-        <span className="flex items-center text-sm sm:text-base font-bold text-gray-800 tracking-wide px-4 justify-center">
-          Current Tier: {currentStage - 1} / {totalStages - 1}
-        </span>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 sm:px-6 sm:py-2.5 text-sm sm:text-base bg-gray-800 hover:bg-gray-900 active:scale-95 transition-all text-white font-semibold rounded-lg sm:rounded-xl shadow-md"
-        >
-          Done (Log Out)
-        </button>
+      {/* 1. Welcome Banner (Top Header) */}
+      <div className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 max-w-xl w-[95vw] sm:w-auto pointer-events-auto">
+        <div className="bg-cream border border-dark-blue/60 p-[3px] shadow-2xl rounded-sm w-full">
+          <div className="border border-dark-blue/60 p-3 sm:p-4 bg-cream text-center flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <h1 className="text-lg sm:text-xl font-bold text-dark-blue font-serif uppercase tracking-wide">
+                Welcome to your level {currentStage - 1} Homestead, {session?.alias || 'Pioneer'}
+              </h1>
+              <p className="text-xs sm:text-sm font-semibold text-dark-blue/80">
+                Current Tier: {currentStage - 1} / {totalStages - 1}
+              </p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-xs sm:text-sm bg-dark-blue hover:bg-dark-blue/90 text-cream font-bold rounded border border-dark-blue transition-colors shadow uppercase tracking-wide shrink-0"
+            >
+              Done (Log Out)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2 & 3. Bottom Unlock Banner & Next Milestone Tease */}
+      <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-auto text-center px-4 w-full max-w-md">
+        <div className="bg-[#99182a] border-2 border-[#e69e45] text-[#f2e3da] px-6 py-3 rounded-xl shadow-2xl animate-in zoom-in-95 duration-300 w-full">
+          <p className="font-rye text-xl sm:text-2xl uppercase tracking-wider text-center">
+            Tier {currentStage - 1} Achieved! +1 {getItemNameForTier(currentStage - 1)}
+          </p>
+        </div>
+        <div className="bg-[#132c3f]/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/20 text-amber-200 text-xs sm:text-sm font-medium tracking-wide shadow-md">
+          Reach Tier {currentStage} to unlock the {getNextItemNameForStage(currentStage)}!
+        </div>
       </div>
 
       {/* Celebration Pop-up */}
       {currentStage === 26 && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none p-4 mt-20 sm:mt-0">
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none p-4 mt-20 sm:mt-0">
           <div className="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-sm text-center border-4 border-yellow-500 pointer-events-auto animate-[pop-up_0.5s_cubic-bezier(0.16,1,0.3,1)_forwards]">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
               Congratulations!
@@ -105,13 +156,12 @@ export default function Scene() {
         {/* Lighting Setup */}
         <directionalLight
           castShadow
-          color="#ff8c42" // Classic golden-hour orange
-          position={[-50, 20, -40]} // Y lowered from 30 to 10 for long, stretching shadows
-          intensity={2} // Bumped up slightly to punch through the warm colors
+          color="#ff8c42"
+          position={[-50, 20, -40]}
+          intensity={2}
           shadow-mapSize={[2048, 2048]}
           shadow-bias={-0.0005}
         >
-          {/* These define the "volume" the sun covers. Increase if shadows get clipped */}
           <orthographicCamera
             attach="shadow-camera"
             args={[-30, 30, 30, -30]}
@@ -121,28 +171,12 @@ export default function Scene() {
           <Model currentStage={currentStage} />
           <CustomEnvironment />
         </Suspense>
-        {/* Allows the user to rotate around the land */}
-        <OrbitControls makeDefault />
+        {/* Camera Pan Animation and Interactive Orbit Controls */}
+        <CameraPanController />
         {/* Post Processing Composer applies to everything */}
         <EffectComposer enableNormalPass={false}>
-          {/* 
-          ToneMapping: 
-          - mode: Controls how the colors are mapped to the screen 
-          - good modes:LINEAR,NEUTRAL
-        */}
           <ToneMapping mode={ToneMappingMode.NEUTRAL} />
-          {/* 
-          Bloom: 
-          - luminanceThreshold: Controls how bright something must be to glow. (1+ prevents the whole screen from glowing)
-          - mipmapBlur: Creates a very smooth, cinematic glow rather than a harsh blur
-          - intensity: How strong the glow is
-        */}
           <Bloom luminanceThreshold={1.2} mipmapBlur intensity={0.5} />
-
-          {/* 
-          Vignette: 
-          - offset & darkness: Controls the size and opacity of the darkened edges 
-        */}
           <Vignette eskil={false} offset={0.05} darkness={0.9} />
         </EffectComposer>
       </Canvas>

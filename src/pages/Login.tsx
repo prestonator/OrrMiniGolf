@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AuthForm } from "../components/AuthForm";
 import { supabase } from "../utils/supabase";
 import { Wheat, Pickaxe } from "lucide-react";
+import { Spinner } from "../components/Spinner";
 
 export default function Login() {
   const { data: players, isLoading } = useQuery({
@@ -44,7 +45,10 @@ export default function Login() {
           <div className="border border-dark-blue/60 p-[3px] h-full w-full">
             <div className="border border-dark-blue/60 p-6 sm:p-8 bg-cream flex flex-col">
               {isLoading ? (
-                <div className="text-center text-dark-blue">Loading players...</div>
+                <div className="flex flex-col items-center justify-center gap-3 py-6 text-dark-blue">
+                  <Spinner size="md" color="border-dark-blue" />
+                  <span className="font-semibold text-sm">Loading players...</span>
+                </div>
               ) : (
                 <AuthForm players={players || []} />
               )}
