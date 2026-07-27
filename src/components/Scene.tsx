@@ -185,8 +185,8 @@ export default function Scene() {
         <directionalLight
           castShadow
           color="#ff8c42"
-          position={[-50, 20, -40]}
-          intensity={2}
+          position={[-50, 25, -50]}
+          intensity={2.5}
           shadow-mapSize={[2048, 2048]}
           shadow-bias={-0.0005}
         >
