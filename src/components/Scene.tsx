@@ -185,14 +185,14 @@ export default function Scene() {
         <directionalLight
           castShadow
           color="#ff8c42"
-          position={[-50, 25, -50]}
+          position={[-50, 15, -50]}
           intensity={2.5}
           shadow-mapSize={[2048, 2048]}
           shadow-bias={-0.0005}
         >
           <orthographicCamera
             attach="shadow-camera"
-            args={[-30, 30, 30, -30]}
+            args={[-40, 40, 40, -40, 0.1, 500]}
           />
         </directionalLight>
         <Suspense fallback={null}>
@@ -204,7 +204,7 @@ export default function Scene() {
         {/* Post Processing Composer applies to everything */}
         <EffectComposer enableNormalPass={false}>
           <ToneMapping mode={ToneMappingMode.NEUTRAL} />
-          <Bloom luminanceThreshold={1.3} mipmapBlur intensity={0.5} />
+          <Bloom luminanceThreshold={1.1} mipmapBlur intensity={0.5} />
           <Vignette eskil={false} offset={0.05} darkness={0.9} />
         </EffectComposer>
       </Canvas>
