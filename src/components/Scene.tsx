@@ -17,13 +17,13 @@ import { Spinner } from "./Spinner";
 import { CameraPanController } from "./CameraPanController";
 
 function CustomEnvironment() {
-  const texture = useTexture("/bgSky.png");
+  const texture = useTexture("/bgSky3.png");
   texture.mapping = THREE.EquirectangularReflectionMapping;
 
   return (
     <>
       <Environment preset="forest" />
-      <Environment map={texture} background="only" blur={0.05} />
+      <Environment map={texture} background="only" blur={0.05} backgroundRotation={[0, Math.PI, 0]} />
     </>
   );
 }
@@ -204,7 +204,7 @@ export default function Scene() {
         {/* Post Processing Composer applies to everything */}
         <EffectComposer enableNormalPass={false}>
           <ToneMapping mode={ToneMappingMode.NEUTRAL} />
-          <Bloom luminanceThreshold={1.2} mipmapBlur intensity={0.5} />
+          <Bloom luminanceThreshold={1.3} mipmapBlur intensity={0.5} />
           <Vignette eskil={false} offset={0.05} darkness={0.9} />
         </EffectComposer>
       </Canvas>
