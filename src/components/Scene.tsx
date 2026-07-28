@@ -31,26 +31,32 @@ function CustomEnvironment() {
 const getItemNameForTier = (tier: number) => {
   const items: Record<number, string> = {
     1: "Wild Grass",
-    2: "Fertile Soil",
-    3: "Oak Trees & Timber",
-    4: "Log Cabin",
-    5: "Windmill",
-    6: "Pine Orchard",
+    2: "Settler's Tent",
+    3: "Bonfire",
+    4: "Outhouse",
+    5: "Shovel",
+    6: "Cleared Land",
     7: "Water Well",
+    8: "Tilled Soil",
+    9: "Watering Equipment",
+    10: "Firewood",
+    11: "Chicken Coop",
+    12: "Lantern",
+    13: "Sprouting Crops",
+    14: "Perimeter Fence",
+    15: "Well Bucket",
+    16: "Chickens",
+    17: "Wheelbarrow",
+    18: "Windmill",
+    19: "Hay Storage",
+    20: "Horse & Wagon",
+    21: "Completed Residence",
+    22: "Storm Shelter",
+    23: "Clothesline",
+    24: "Big Red Barn",
+    25: "Pitchforks",
   };
-  return items[tier] || "Log Cabin";
-};
-
-const getNextItemNameForStage = (stage: number) => {
-  const items: Record<number, string> = {
-    2: "Fertile Soil",
-    3: "Oak Trees & Timber",
-    4: "Log Cabin",
-    5: "Windmill",
-    6: "Pine Orchard",
-    7: "Water Well",
-  };
-  return items[stage] || "Windmill";
+  return items[tier] || "Mystery Item";
 };
 
 function LoadingOverlay() {
@@ -146,13 +152,17 @@ export default function Scene() {
 
       {/* 2 & 3. Bottom Unlock Banner & Next Milestone Tease */}
       <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-auto text-center px-4 w-full max-w-md">
-        <div className="bg-[#99182a] border-2 border-[#e69e45] text-[#f2e3da] px-6 py-3 rounded-xl shadow-2xl animate-in zoom-in-95 duration-300 w-full">
-          <p className="font-rye text-xl sm:text-2xl uppercase tracking-wider text-center">
-            Tier {currentStage - 1} Achieved! +1 {getItemNameForTier(currentStage - 1)}
-          </p>
-        </div>
+        {currentStage > 1 && (
+          <div className="bg-[#99182a] border-2 border-[#e69e45] text-[#f2e3da] px-6 py-3 rounded-xl shadow-2xl animate-in zoom-in-95 duration-300 w-full">
+            <p className="font-rye text-xl sm:text-2xl uppercase tracking-wider text-center">
+              Tier {currentStage - 1} Achieved! +1 {getItemNameForTier(currentStage - 1)}
+            </p>
+          </div>
+        )}
         <div className="bg-[#132c3f]/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/20 text-amber-200 text-xs sm:text-sm font-medium tracking-wide shadow-md">
-          Reach Tier {currentStage} to unlock the {getNextItemNameForStage(currentStage)}!
+          {currentStage === 26 
+            ? "Congratulations! You have proved your homestead and are now eligible for the 20k mini golf tournament"
+            : `Reach Tier ${currentStage} to unlock the ${getItemNameForTier(currentStage)}!`}
         </div>
       </div>
 

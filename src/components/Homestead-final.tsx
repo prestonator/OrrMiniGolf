@@ -100,10 +100,11 @@ type ModelProps = React.JSX.IntrinsicElements['group'] & {
 
 export function Model({ currentStage = 1, ...props }: ModelProps) {
   const { nodes, materials } = useGLTF('/homestead-final-transformed.glb') as unknown as GLTFResult
+
   return (
     <group {...props} dispose={null}>
       <group rotation={[Math.PI / 2, 0, 0]} scale={0.01}>
-        {/* Stage 1: Base ground always visible */}
+        {/* Stage 1: Base Land & Trees */}
         <group>
           <mesh
             receiveShadow
@@ -120,56 +121,18 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
             geometry={nodes.Road.geometry}
             material={materials.Ground_Material}
           />
-        </group>
-
-        {/* Stage 2 */}
-        <PopInGroup stage={2} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Grass.geometry}
-            material={materials.Plants_Grass_Fan_Material}
+            geometry={nodes.Sand_Stone.geometry}
+            material={materials.Tree_Fence_Sand_Material}
           />
-          {/* Continue adding castShadow and receiveShadow to all other meshes... */}
-        </PopInGroup>
-
-        {/* Stage 3 */}
-        <DropDownGroup stage={3} currentStage={currentStage}>
-          <mesh
-            receiveShadow
-            geometry={nodes.Plant_Sand.geometry}
-            material={materials.Ground_Material}
-          />
-        </DropDownGroup>
-
-        {/* Stage 4 */}
-        <PopInGroup stage={4} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Tree.geometry}
             material={materials.Tree_Fence_Sand_Material}
           />
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Wood.geometry}
-            material={materials.Tree_Fence_Sand_Material}
-          />
-        </PopInGroup>
-
-        {/* Stage 5 */}
-        <DropDownGroup stage={5} currentStage={currentStage}>
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Cut_Tree.geometry}
-            material={materials.Tree_Fence_Sand_Material}
-          />
-        </DropDownGroup>
-
-        {/* Stage 6 */}
-        <DropDownGroup stage={6} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
@@ -182,70 +145,20 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
             geometry={nodes.tree.geometry}
             material={materials.Tree_Fence_Sand_Material}
           />
-        </DropDownGroup>
+        </group>
 
-        {/* Stage 7 */}
-        <PopInGroup stage={7} currentStage={currentStage}>
+        {/* Stage 2: Grass Detail Appears */}
+        <PopInGroup stage={2} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Big_Fan.geometry}
+            geometry={nodes.Grass.geometry}
             material={materials.Plants_Grass_Fan_Material}
           />
         </PopInGroup>
 
-        {/* Stage 8 */}
-        <PopInGroup stage={8} currentStage={currentStage}>
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Plants.geometry}
-            material={materials.Plants_Grass_Fan_Material}
-          />
-        </PopInGroup>
-
-        {/* Stage 9 */}
-        <DropDownGroup stage={9} currentStage={currentStage}>
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Well.geometry}
-            material={materials.Bonfire_Well_Material}
-          />
-        </DropDownGroup>
-
-        {/* Stage 10 */}
-        <PopInGroup stage={10} currentStage={currentStage}>
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Water_Basket.geometry}
-            material={materials.Tree_Fence_Sand_Material}
-          />
-        </PopInGroup>
-
-        {/* Stage 11 */}
-        <DropDownGroup stage={11} currentStage={currentStage}>
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Water_Shower.geometry}
-            material={materials.Bonfire_Well_Material}
-          />
-        </DropDownGroup>
-
-        {/* Stage 12 */}
-        <DropDownGroup stage={12} currentStage={currentStage}>
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Washroom.geometry}
-            material={materials.Tree_Fence_Sand_Material}
-          />
-        </DropDownGroup>
-
-        {/* Stage 13 */}
-        <DropDownGroup stage={13} currentStage={currentStage}>
+        {/* Stage 3: Settlers Arrive (Tents) */}
+        <DropDownGroup stage={3} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
@@ -254,8 +167,8 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
           />
         </DropDownGroup>
 
-        {/* Stage 14 */}
-        <PopInGroup stage={14} currentStage={currentStage}>
+        {/* Stage 4: First Fire */}
+        <PopInGroup stage={4} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
@@ -264,18 +177,18 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
           />
         </PopInGroup>
 
-        {/* Stage 15 */}
-        <PopInGroup stage={15} currentStage={currentStage}>
+        {/* Stage 5: Basic Sanitation */}
+        <DropDownGroup stage={5} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Lamp.geometry}
-            material={materials.Tent_Hen_House_Material}
+            geometry={nodes.Washroom.geometry}
+            material={materials.Tree_Fence_Sand_Material}
           />
-        </PopInGroup>
+        </DropDownGroup>
 
-        {/* Stage 16 */}
-        <PopInGroup stage={16} currentStage={currentStage}>
+        {/* Stage 6: Groundbreaking Tools */}
+        <PopInGroup stage={6} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
@@ -284,17 +197,116 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
           />
         </PopInGroup>
 
-        {/* Stage 17 */}
-        <PopInGroup stage={17} currentStage={currentStage}>
+        {/* Stage 7: Clearing Land */}
+        <DropDownGroup stage={7} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Pitch_Fork.geometry}
+            geometry={nodes.Cut_Tree.geometry}
+            material={materials.Tree_Fence_Sand_Material}
+          />
+        </DropDownGroup>
+
+        {/* Stage 8: Securing Water */}
+        <DropDownGroup stage={8} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Well.geometry}
+            material={materials.Bonfire_Well_Material}
+          />
+        </DropDownGroup>
+
+        {/* Stage 9: Tilling the Soil */}
+        <DropDownGroup stage={9} currentStage={currentStage}>
+          <mesh
+            receiveShadow
+            geometry={nodes.Plant_Sand.geometry}
+            material={materials.Ground_Material}
+          />
+        </DropDownGroup>
+
+        {/* Stage 10: Watering Equipment */}
+        <PopInGroup stage={10} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Water_Shower.geometry}
+            material={materials.Bonfire_Well_Material}
+          />
+        </PopInGroup>
+
+        {/* Stage 11: Chopped Fuel/Materials */}
+        <PopInGroup stage={11} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Wood.geometry}
+            material={materials.Tree_Fence_Sand_Material}
+          />
+        </PopInGroup>
+
+        {/* Stage 12: Building the Coop */}
+        <DropDownGroup stage={12} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Hen_House.geometry}
+            material={materials.Tent_Hen_House_Material}
+          />
+        </DropDownGroup>
+
+        {/* Stage 13: Evening Light */}
+        <PopInGroup stage={13} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Lamp.geometry}
             material={materials.Tent_Hen_House_Material}
           />
         </PopInGroup>
 
-        {/* Stage 18 */}
+        {/* Stage 14: Crops Sprout */}
+        <PopInGroup stage={14} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Plants.geometry}
+            material={materials.Plants_Grass_Fan_Material}
+          />
+        </PopInGroup>
+
+        {/* Stage 15: Perimeter Fencing */}
+        <DropDownGroup stage={15} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Fence.geometry}
+            material={materials.Tree_Fence_Sand_Material}
+          />
+        </DropDownGroup>
+
+        {/* Stage 16: Well Bucket */}
+        <PopInGroup stage={16} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Water_Basket.geometry}
+            material={materials.Tree_Fence_Sand_Material}
+          />
+        </PopInGroup>
+
+        {/* Stage 17: Chickens Arrive */}
+        <PopInGroup stage={17} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Hen.geometry}
+            material={materials.Bonfire_Well_Material}
+          />
+        </PopInGroup>
+
+        {/* Stage 18: Wheelbarrows */}
         <PopInGroup stage={18} currentStage={currentStage}>
           <mesh
             castShadow
@@ -304,33 +316,27 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
           />
         </PopInGroup>
 
-        {/* Stage 19 */}
-        <DropDownGroup stage={19} currentStage={currentStage}>
+        {/* Stage 19: Windmill */}
+        <PopInGroup stage={19} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Fence.geometry}
-            material={materials.Tree_Fence_Sand_Material}
+            geometry={nodes.Big_Fan.geometry}
+            material={materials.Plants_Grass_Fan_Material}
           />
-        </DropDownGroup>
+        </PopInGroup>
 
-        {/* Stage 20 */}
+        {/* Stage 20: Hay Storage */}
         <DropDownGroup stage={20} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Hen_House.geometry}
+            geometry={nodes.Part.geometry}
             material={materials.Tent_Hen_House_Material}
-          />
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Hen.geometry}
-            material={materials.Bonfire_Well_Material}
           />
         </DropDownGroup>
 
-        {/* Stage 21 */}
+        {/* Stage 21: Horse & Wagon */}
         <PopInGroup stage={21} currentStage={currentStage}>
           <mesh
             castShadow
@@ -340,7 +346,7 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
           />
         </PopInGroup>
 
-        {/* Stage 22 */}
+        {/* Stage 22: Completed Residence */}
         <DropDownGroup stage={22} currentStage={currentStage}>
           <mesh
             castShadow
@@ -348,26 +354,16 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
             geometry={nodes.House_Part.geometry}
             material={materials.Ground_Material}
           />
-        </DropDownGroup>
-
-        {/* Stage 23 */}
-        <DropDownGroup stage={23} currentStage={currentStage}>
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Part.geometry}
-            material={materials.Tent_Hen_House_Material}
-          />
-        </DropDownGroup>
-
-        {/* Stage 24 */}
-        <DropDownGroup stage={24} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.House.geometry}
             material={materials.House_Material}
           />
+        </DropDownGroup>
+
+        {/* Stage 23: Storm Shelter */}
+        <DropDownGroup stage={23} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
@@ -376,8 +372,8 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
           />
         </DropDownGroup>
 
-        {/* Stage 25 */}
-        <PopInGroup stage={25} currentStage={currentStage}>
+        {/* Stage 24: Domestic Details (Clothesline) */}
+        <PopInGroup stage={24} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
@@ -386,8 +382,8 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
           />
         </PopInGroup>
 
-        {/* Stage 26 */}
-        <DropDownGroup stage={26} currentStage={currentStage}>
+        {/* Stage 25: Big Red Barn */}
+        <DropDownGroup stage={25} currentStage={currentStage}>
           <mesh
             castShadow
             receiveShadow
@@ -395,9 +391,19 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
             material={materials.Farm_House_Material}
           />
         </DropDownGroup>
+
+        {/* Stage 26: Pitchforks (Leaning on the Barn) */}
+        <PopInGroup stage={26} currentStage={currentStage}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Pitch_Fork.geometry}
+            material={materials.Tent_Hen_House_Material}
+          />
+        </PopInGroup>
       </group>
     </group>
-  )
+  );
 }
 
 useGLTF.preload('/homestead-final-transformed.glb')
