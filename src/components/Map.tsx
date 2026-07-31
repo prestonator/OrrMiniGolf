@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef, memo, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getMapState, claimPlot } from '../utils/api';
-import { supabase } from '../utils/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence } from 'framer-motion';
+
+import { claimPlot } from '../utils/api';
 import { useKioskStore } from '../store/useKioskStore';
 import { Spinner } from './Spinner';
 
-const cityTargets: Record<string, number> = { Norman: 1150, OKC: 650, Guthrie: 250, Stillwater: 35, Kingfisher: 205, "El Reno": 645 };
-const cities = ["Kingfisher", "Guthrie", "Stillwater", "OKC", "Norman", "El Reno"];
+import { usePlots } from '../hooks/usePlots';
+import { CITY_TARGETS, CITIES, GRID_COLS, GRID_ROWS, TOTAL_PLOTS } from '../config/constants';
+import { Leaderboard } from './Map/Leaderboard';
+import { CitySelector } from './Map/CitySelector';
+import { ClaimModal } from './Map/ClaimModal';
+import { Button } from './ui/Button';
 
 const PlotSquare = memo(({ 
   idx, 
@@ -55,24 +59,14 @@ export default function OklahomaPlotMap() {
   const clearSession = useKioskStore((state) => state.clearSession);
   
   const currentUserId = session?.pioneerId || null;
-
-  // Zoom reference
   const transformWrapperRef = useRef<ReactZoomPanPinchRef>(null);
-
-  // Configuration for 1200 plots
-  const GRID_COLS = 40; 
-  const GRID_ROWS = 30;
-  const totalPlots = GRID_COLS * GRID_ROWS;
 
   const getInitials = (name?: string) => {
     if (!name) return '??';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const { data: mapState, isLoading } = useQuery({
-    queryKey: ['mapState', currentUserId],
-    queryFn: () => getMapState(currentUserId)
-  });
+  const { data: mapState, isLoading } = usePlots(currentUserId);
 
   const [pendingPlots, setPendingPlots] = useState<number[]>([]);
   const [showClaimModal, setShowClaimModal] = useState(false);
@@ -86,7 +80,7 @@ export default function OklahomaPlotMap() {
 
   const handleCityChoice = (city: string) => {
     setHasDismissedCityChoice(true);
-    const targetPlotId = cityTargets[city];
+    const targetPlotId = CITY_TARGETS[city];
     setTimeout(() => {
       transformWrapperRef.current?.zoomToElement(`plot-${targetPlotId}`, 3, 800);
     }, 100);
@@ -122,7 +116,6 @@ export default function OklahomaPlotMap() {
     }));
   }, [mapState?.leaderboardData]);
 
-  // Effect for zooming and redirecting when myPlotId is found
   useEffect(() => {
     if (!isLoading && mapState?.myPlotId !== null && imageLoaded) {
       if (transformWrapperRef.current) {
@@ -135,18 +128,6 @@ export default function OklahomaPlotMap() {
       }
     }
   }, [isLoading, mapState?.myPlotId, navigate, imageLoaded]);
-
-  // Realtime subscription
-  useEffect(() => {
-    const channel = supabase.channel('realtime_plots')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'plots' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['mapState'] });
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
 
   const handlePlotClick = useCallback((plotId: number) => {
     if (plotDetails[plotId] || pendingPlots.includes(plotId)) return;
@@ -167,9 +148,7 @@ export default function OklahomaPlotMap() {
     setIsProcessing(true);
     setErrorMsg('');
     try {
-      // Simulate network delay for payment
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
       const { error } = await claimPlot(activePlot, currentUserId);
       if (error) throw new Error(error);
       
@@ -209,79 +188,21 @@ export default function OklahomaPlotMap() {
           <div className="text-sm sm:text-lg font-semibold text-blue-700 bg-blue-100 px-4 py-1.5 rounded-full shadow-inner">
             Tier: {mapState?.userTier || 0}
           </div>
-          <button 
-            onClick={handleLogout}
-            className="text-sm font-medium bg-gray-800 hover:bg-gray-900 text-white px-4 py-1.5 rounded-full transition-colors shadow-md active:scale-95"
-          >
+          <Button variant="secondary" onClick={handleLogout}>
             Done (Log Out)
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="absolute right-6 top-32 z-10 bg-white/90 backdrop-blur-md px-4 py-4 rounded-xl shadow-lg w-64 border border-white/20 max-h-[60vh] overflow-y-auto flex flex-col gap-3 pointer-events-auto">
-        <h2 className="text-lg font-bold text-gray-800 tracking-tight border-b pb-2 font-serif">Leaderboard</h2>
-        {leaderboard.length === 0 ? (
-          <div className="text-sm text-gray-500 italic">No plots claimed yet.</div>
-        ) : (
-          leaderboard.map((entry, idx) => (
-            <div key={entry.owner_id} className="flex items-center gap-3">
-              <div className="text-sm font-bold text-gray-400 w-4">{idx + 1}.</div>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm bg-gray-500">
-                {entry.initials}
-              </div>
-              <div className="flex flex-col flex-1 min-w-0">
-                <div className="text-sm font-bold text-gray-800 truncate">{entry.first_name}</div>
-                <div className="text-xs text-gray-500">Stage {entry.stage} / 26</div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      <Leaderboard entries={leaderboard} />
 
       <AnimatePresence>
         {showCityChoice && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-              className="relative bg-cream p-1 shadow-2xl max-w-2xl w-full text-center mx-4"
-            >
-              <div className="border border-dark-blue/60 p-[3px] h-full w-full">
-                <div className="border border-dark-blue/60 p-6 sm:p-8 bg-cream flex flex-col items-center">
-                  <h2 className="text-3xl font-bold text-dark-blue mb-6 font-serif uppercase tracking-wide">
-                    Claim a Specific Plot
-                  </h2>
-                  <p className="text-dark-blue/80 mb-6 font-medium text-base">
-                    Select a region to zoom in and stake your land claim.
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 w-full">
-                    {cities.map((city) => (
-                      <button
-                        key={city}
-                        onClick={() => handleCityChoice(city)}
-                        className="py-4 px-4 rounded bg-light-blue hover:bg-light-blue/90 active:bg-light-blue/80 text-cream font-bold text-lg transition-all shadow-md shadow-light-blue/30 uppercase tracking-wide active:translate-y-0.5"
-                      >
-                        {city}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setHasDismissedCityChoice(true)}
-                    className="w-full sm:w-auto text-base font-bold text-dark-blue hover:bg-dark-blue/5 py-3 px-8 rounded border-2 border-dark-blue transition-all uppercase tracking-wide"
-                  >
-                    Skip and see entire map
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
+          <CitySelector 
+            cities={CITIES} 
+            onSelectCity={handleCityChoice} 
+            onSkip={() => setHasDismissedCityChoice(true)} 
+          />
         )}
       </AnimatePresence>
 
@@ -311,7 +232,7 @@ export default function OklahomaPlotMap() {
                 gridTemplateRows: `repeat(${GRID_ROWS}, 1fr)` 
               }}
             >
-              {Array.from({ length: totalPlots }).map((_, idx) => (
+              {Array.from({ length: TOTAL_PLOTS }).map((_, idx) => (
                 <PlotSquare 
                   key={idx}
                   idx={idx}
@@ -326,49 +247,13 @@ export default function OklahomaPlotMap() {
       </TransformWrapper>
 
       {showClaimModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200 p-4">
-          <div className="relative w-full max-w-md bg-cream p-1 shadow-2xl transform animate-in zoom-in-95 duration-200 overflow-hidden">
-            {isProcessing && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-                <Spinner size="lg" />
-              </div>
-            )}
-            <div className="border border-dark-blue/60 p-[3px] h-full w-full">
-              <div className="border border-dark-blue/60 p-6 sm:p-8 bg-cream text-center flex flex-col">
-                <h2 className="text-2xl font-bold text-dark-blue mb-3 font-serif uppercase tracking-wider">
-                  Confirm Claim
-                </h2>
-                <p className="text-dark-blue/90 mb-6 font-medium text-base">
-                  You are about to claim <strong className="font-bold text-red font-serif">Plot #{activePlot}</strong>. <br /> 
-                  Confirm your claim to take ownership and increase your tier.
-                </p>
-
-                {errorMsg && (
-                  <div className="mb-4 p-3 bg-red/10 text-red text-sm rounded font-bold border border-red/30">
-                    {errorMsg}
-                  </div>
-                )}
-
-                <div className="flex gap-3 justify-center">
-                  <button 
-                    onClick={handleCancel}
-                    disabled={isProcessing}
-                    className="flex-1 py-3 px-4 rounded font-bold text-dark-blue border-2 border-dark-blue bg-transparent hover:bg-dark-blue/5 transition-colors uppercase tracking-wide text-sm sm:text-base disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleInitiatePayment}
-                    disabled={isProcessing}
-                    className="flex-[2] py-3 px-4 rounded font-bold text-cream bg-light-blue hover:bg-light-blue/90 transition-all shadow-lg shadow-light-blue/30 uppercase tracking-wide text-sm sm:text-base active:translate-y-0.5 disabled:opacity-70 flex items-center justify-center gap-2"
-                  >
-                    {`Pay $15.00 for Plot #${activePlot}`}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ClaimModal 
+          activePlot={activePlot} 
+          isProcessing={isProcessing} 
+          errorMsg={errorMsg} 
+          onCancel={handleCancel} 
+          onConfirm={handleInitiatePayment} 
+        />
       )}
     </div>
   );
