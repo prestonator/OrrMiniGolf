@@ -24,7 +24,7 @@ export function useGameState() {
         return;
       }
       const tier = await getUserTier(session.pioneerId);
-      setCurrentStage(Math.min(totalStages, tier + 1));
+      setCurrentStage(Math.min(totalStages, tier));
       setLoading(false);
     }
     load();
