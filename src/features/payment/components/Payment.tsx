@@ -4,6 +4,7 @@ import { useKioskStore } from "../../../store/useKioskStore";
 import { PaymentLayout } from "../Payment/PaymentLayout";
 import { VisitCheckout } from "../Payment/VisitCheckout";
 import { QuickRoundCheckout } from "../Payment/QuickRoundCheckout";
+import { usePurchaseRounds } from "../api/usePurchaseRounds";
 
 export interface PaymentProps {
   mode?: "quick-round" | "visit";
@@ -31,9 +32,18 @@ export default function Payment({ mode = "quick-round" }: PaymentProps) {
     }
   }, [mode, session, navigate]);
 
-  const handleSimulatePayment = () => {
+  const { mutateAsync: purchaseRounds } = usePurchaseRounds();
+
+  const handleSimulatePayment = (quantity: number) => {
     setIsProcessing(true);
-    setTimeout(() => {
+    setTimeout(async () => {
+      if (mode === "visit" && session?.pioneerId) {
+        try {
+          await purchaseRounds({ userId: session.pioneerId, quantity });
+        } catch (error) {
+          console.error("Failed to purchase rounds", error);
+        }
+      }
       setIsProcessing(false);
       handleSuccess();
     }, 1500);
