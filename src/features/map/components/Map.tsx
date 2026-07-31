@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   TransformWrapper,
@@ -24,53 +24,10 @@ import { CitySelector } from "./CitySelector";
 import { ClaimModal } from "./ClaimModal";
 import { Button } from "../../../components/ui/Button";
 
-const PlotSquare = memo(
-  ({
-    idx,
-    details,
-    isPending,
-    onClick,
-  }: {
-    idx: number;
-    details?: { initials: string; isMine: boolean };
-    isPending: boolean;
-    onClick: (idx: number) => void;
-  }) => {
-    const isOwnedByMe = details?.isMine;
-    const isOwnedByOther = details && !details.isMine;
-
-    let plotStyle =
-      "border border-gray-500/20 hover:bg-blue-400/40 hover:border-blue-400 cursor-pointer transition-all duration-150 flex items-center justify-center overflow-hidden";
-
-    if (isPending) {
-      plotStyle =
-        "bg-yellow-400/70 border-yellow-500 cursor-wait shadow-inner flex items-center justify-center overflow-hidden";
-    } else if (isOwnedByMe) {
-      plotStyle =
-        "bg-green-500 flex items-center justify-center overflow-hidden font-bold text-[0.45rem] shadow-sm animate-in zoom-in-75 duration-300 text-white border-2 border-green-700";
-    } else if (isOwnedByOther) {
-      plotStyle =
-        "bg-gray-500 flex items-center justify-center overflow-hidden font-bold text-[0.45rem] shadow-sm animate-in zoom-in-75 duration-300 text-white border border-gray-600";
-    }
-
-    return (
-      <div
-        id={`plot-${idx}`}
-        onClick={() => onClick(idx)}
-        className={plotStyle}
-        title={`Plot #${idx}`}
-      >
-        {details && !isPending && details.initials}
-      </div>
-    );
-  },
-);
-PlotSquare.displayName = "PlotSquare";
-
 export default function OklahomaPlotMap() {
   const navigate = useNavigate();
-  const session = useKioskStore((state: any) => state.session);
-  const clearSession = useKioskStore((state: any) => state.clearSession);
+  const session = useKioskStore((state) => state.session);
+  const clearSession = useKioskStore((state) => state.clearSession);
 
   const currentUserId = session?.pioneerId || null;
   const transformWrapperRef = useRef<ReactZoomPanPinchRef>(null);
@@ -95,6 +52,10 @@ export default function OklahomaPlotMap() {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasDismissedCityChoice, setHasDismissedCityChoice] = useState(false);
+
+  const imgRef = useRef<HTMLImageElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [hoveredPlot, setHoveredPlot] = useState<number | null>(null);
 
   const showCityChoice =
     !hasDismissedCityChoice &&
@@ -219,6 +180,185 @@ export default function OklahomaPlotMap() {
     navigate("/");
   };
 
+  // Canvas drawing logic
+  const drawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img || !imageLoaded) return;
+
+    const width = img.clientWidth;
+    const height = img.clientHeight;
+
+    // Fallback just in case image hasn't fully computed layout
+    if (width === 0 || height === 0) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+
+    const cellWidth = width / GRID_COLS;
+    const cellHeight = height / GRID_ROWS;
+
+    // Background grid lines
+    ctx.strokeStyle = "rgba(107, 114, 128, 0.2)"; // gray-500/20
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let c = 0; c <= GRID_COLS; c++) {
+      ctx.moveTo(c * cellWidth, 0);
+      ctx.lineTo(c * cellWidth, height);
+    }
+    for (let r = 0; r <= GRID_ROWS; r++) {
+      ctx.moveTo(0, r * cellHeight);
+      ctx.lineTo(width, r * cellHeight);
+    }
+    ctx.stroke();
+
+    for (let idx = 0; idx < TOTAL_PLOTS; idx++) {
+      const col = idx % GRID_COLS;
+      const row = Math.floor(idx / GRID_COLS);
+      const x = col * cellWidth;
+      const y = row * cellHeight;
+
+      const isPending = pendingPlots.includes(idx);
+      const details = plotDetails[idx];
+      const isMine = details?.isMine;
+      const isOther = details && !details.isMine;
+      const isHovered = hoveredPlot === idx;
+
+      if (isPending) {
+        ctx.fillStyle = "rgba(250, 204, 21, 0.7)";
+        ctx.fillRect(x, y, cellWidth, cellHeight);
+        ctx.strokeStyle = "rgba(234, 179, 8, 1)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, cellWidth, cellHeight);
+      } else if (isMine) {
+        ctx.fillStyle = "rgba(34, 197, 94, 1)";
+        ctx.fillRect(x, y, cellWidth, cellHeight);
+        ctx.strokeStyle = "rgba(21, 128, 61, 1)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, cellWidth, cellHeight);
+
+        ctx.fillStyle = "white";
+        // Calculate font size relative to cell width (roughly 80% of width up to a max)
+        const fontSize = Math.max(3, Math.min(10, cellWidth * 0.8));
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(details.initials, x + cellWidth / 2, y + cellHeight / 2);
+      } else if (isOther) {
+        ctx.fillStyle = "rgba(107, 114, 128, 1)";
+        ctx.fillRect(x, y, cellWidth, cellHeight);
+        ctx.strokeStyle = "rgba(75, 85, 99, 1)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, cellWidth, cellHeight);
+
+        ctx.fillStyle = "white";
+        const fontSize = Math.max(3, Math.min(10, cellWidth * 0.8));
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(details.initials, x + cellWidth / 2, y + cellHeight / 2);
+      } else if (isHovered) {
+        ctx.fillStyle = "rgba(96, 165, 250, 0.4)";
+        ctx.fillRect(x, y, cellWidth, cellHeight);
+        ctx.strokeStyle = "rgba(96, 165, 250, 1)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, cellWidth, cellHeight);
+      }
+    }
+  }, [imageLoaded, plotDetails, pendingPlots, hoveredPlot]);
+
+  useEffect(() => {
+    drawCanvas();
+  }, [drawCanvas]);
+
+  const getPlotIdxFromEvent = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const cellWidth = rect.width / GRID_COLS;
+    const cellHeight = rect.height / GRID_ROWS;
+
+    const col = Math.floor(x / cellWidth);
+    const row = Math.floor(y / cellHeight);
+
+    if (col >= 0 && col < GRID_COLS && row >= 0 && row < GRID_ROWS) {
+      return row * GRID_COLS + col;
+    }
+    return null;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const idx = getPlotIdxFromEvent(e);
+    if (idx !== hoveredPlot) {
+      setHoveredPlot(idx);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredPlot(null);
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const idx = getPlotIdxFromEvent(e);
+    if (idx !== null) {
+      handlePlotClick(idx);
+    }
+  };
+
+  // Hidden targets for zoom feature
+  const hiddenTargets = useMemo(() => {
+    const targets = CITIES.map((city) => {
+      const targetId = CITY_TARGETS[city];
+      const col = targetId % GRID_COLS;
+      const row = Math.floor(targetId / GRID_COLS);
+      return (
+        <div
+          key={city}
+          id={`plot-${targetId}`}
+          className="absolute pointer-events-none"
+          style={{
+            left: `${(col / GRID_COLS) * 100}%`,
+            top: `${(row / GRID_ROWS) * 100}%`,
+            width: `${100 / GRID_COLS}%`,
+            height: `${100 / GRID_ROWS}%`,
+          }}
+        />
+      );
+    });
+
+    if (mapState?.myPlotId !== null && mapState?.myPlotId !== undefined) {
+      const col = mapState.myPlotId % GRID_COLS;
+      const row = Math.floor(mapState.myPlotId / GRID_COLS);
+      targets.push(
+        <div
+          key="myPlot"
+          id={`plot-${mapState.myPlotId}`}
+          className="absolute pointer-events-none"
+          style={{
+            left: `${(col / GRID_COLS) * 100}%`,
+            top: `${(row / GRID_ROWS) * 100}%`,
+            width: `${100 / GRID_COLS}%`,
+            height: `${100 / GRID_ROWS}%`,
+          }}
+        />,
+      );
+    }
+
+    return targets;
+  }, [mapState?.myPlotId]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-orange-50 flex items-center justify-center">
@@ -272,31 +412,27 @@ export default function OklahomaPlotMap() {
             style={{ width: "1600px", maxWidth: "none" }}
           >
             <img
+              ref={imgRef}
               src="/oklahoma-map-1889.jpg"
               alt="1889 Oklahoma Indian Territory Map"
-              onLoad={() => setImageLoaded(true)}
+              onLoad={() => {
+                setImageLoaded(true);
+                // Trigger a re-draw immediately after load
+                setTimeout(drawCanvas, 0);
+              }}
               className="w-full h-auto block opacity-90 shadow-2xl border-4 border-gray-800"
               draggable={false}
             />
 
-            <div
-              className="absolute top-0 left-0 w-full h-full border-4 border-transparent"
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
-                gridTemplateRows: `repeat(${GRID_ROWS}, 1fr)`,
-              }}
-            >
-              {Array.from({ length: TOTAL_PLOTS }).map((_, idx) => (
-                <PlotSquare
-                  key={idx}
-                  idx={idx}
-                  details={plotDetails[idx]}
-                  isPending={pendingPlots.includes(idx)}
-                  onClick={handlePlotClick}
-                />
-              ))}
-            </div>
+            <canvas
+              ref={canvasRef}
+              className="absolute top-0 left-0 border-4 border-transparent z-10 cursor-crosshair"
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              onClick={handleCanvasClick}
+            />
+
+            {hiddenTargets}
           </div>
         </TransformComponent>
       </TransformWrapper>

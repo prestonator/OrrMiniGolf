@@ -1,10 +1,10 @@
 export const CITY_TARGETS: Record<string, number> = {
-  Norman: 1150,
-  OKC: 650,
-  Guthrie: 250,
-  Stillwater: 35,
-  Kingfisher: 205,
-  "El Reno": 645,
+  Norman: 11250,
+  OKC: 6390,
+  Guthrie: 2430,
+  Stillwater: 105,
+  Kingfisher: 2055,
+  "El Reno": 6375,
 };
 
 export const CITIES = [
@@ -16,6 +16,6 @@ export const CITIES = [
   "El Reno",
 ];
 
-export const GRID_COLS = 40;
-export const GRID_ROWS = 30;
+export const GRID_COLS = 120;
+export const GRID_ROWS = 100;
 export const TOTAL_PLOTS = GRID_COLS * GRID_ROWS;
