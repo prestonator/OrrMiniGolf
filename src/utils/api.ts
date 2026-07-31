@@ -74,7 +74,7 @@ export async function claimPlot(plotId: number, userId: string) {
 export async function getMapState(userId: string | null) {
   const { data: plots } = await supabase
     .from('plots')
-    .select('id, owner_id, profiles(username, color)')
+    .select('id, owner_id, profiles(first_name, color)')
     .not('owner_id', 'is', null)
   
   let userTier = 0
@@ -85,12 +85,12 @@ export async function getMapState(userId: string | null) {
   if (userId) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('username, color')
+      .select('first_name, color')
       .eq('id', userId)
       .single()
       
     if (profile) {
-      myProfile = { ...profile, full_name: profile.username }
+      myProfile = { ...profile, full_name: profile.first_name }
     }
 
     const { count: visitCount } = await supabase
@@ -123,7 +123,7 @@ export async function getMapState(userId: string | null) {
 
   const { data: allVisits } = await supabase
     .from('visits')
-    .select('user_id, profiles(username)')
+    .select('user_id, profiles(first_name)')
   
   const leaderboardMap = new Map()
   if (allVisits) {
@@ -132,9 +132,9 @@ export async function getMapState(userId: string | null) {
       const profileData = v.profiles 
         ? (Array.isArray(v.profiles) ? v.profiles[0] : v.profiles) 
         : null
-      const uname = profileData?.username || 'Anonymous'
+      const uname = profileData?.first_name || 'Anonymous'
       if (!leaderboardMap.has(uid)) {
-        leaderboardMap.set(uid, { owner_id: uid, username: uname, visits: 0 })
+        leaderboardMap.set(uid, { owner_id: uid, first_name: uname, visits: 0 })
       }
       leaderboardMap.get(uid).visits += 1
     })

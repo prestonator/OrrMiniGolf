@@ -95,14 +95,14 @@ export default function OklahomaPlotMap() {
   const plotDetails = useMemo(() => {
     const details: Record<number, { initials: string, isMine: boolean }> = {};
     if (mapState?.plots) {
-      mapState.plots.forEach((p: { id: number; owner_id: string; profiles: { username?: string } | { username?: string }[] }) => {
+      mapState.plots.forEach((p: { id: number; owner_id: string; profiles: { first_name?: string } | { first_name?: string }[] }) => {
         if (p.owner_id) {
           const profileData = p.profiles 
             ? (Array.isArray(p.profiles) ? p.profiles[0] : p.profiles) 
             : null;
-          const username = profileData?.username || 'Anonymous';
+          const firstName = profileData?.first_name || 'Anonymous';
           details[p.id] = {
-            initials: getInitials(username),
+            initials: getInitials(firstName),
             isMine: p.owner_id === currentUserId
           };
         }
@@ -113,10 +113,10 @@ export default function OklahomaPlotMap() {
 
   const leaderboard = useMemo(() => {
     if (!mapState?.leaderboardData) return [];
-    return mapState.leaderboardData.map((data: { owner_id: string; username: string; visits: number }) => ({
+    return mapState.leaderboardData.map((data: { owner_id: string; first_name: string; visits: number }) => ({
       owner_id: data.owner_id,
-      username: data.username,
-      initials: getInitials(data.username),
+      first_name: data.first_name,
+      initials: getInitials(data.first_name),
       visits: data.visits,
       stage: Math.min(26, data.visits + 1)
     }));
@@ -230,7 +230,7 @@ export default function OklahomaPlotMap() {
                 {entry.initials}
               </div>
               <div className="flex flex-col flex-1 min-w-0">
-                <div className="text-sm font-bold text-gray-800 truncate">{entry.username}</div>
+                <div className="text-sm font-bold text-gray-800 truncate">{entry.first_name}</div>
                 <div className="text-xs text-gray-500">Stage {entry.stage} / 26</div>
               </div>
             </div>
