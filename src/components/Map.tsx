@@ -112,7 +112,7 @@ export default function OklahomaPlotMap() {
       first_name: data.first_name,
       initials: getInitials(data.first_name),
       visits: data.visits,
-      stage: Math.min(26, data.visits + 1)
+      stage: Math.min(26, Math.max(1, data.visits))
     }));
   }, [mapState?.leaderboardData]);
 
