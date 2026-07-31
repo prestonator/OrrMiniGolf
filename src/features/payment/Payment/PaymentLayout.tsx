@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Spinner } from "../../components/Spinner";
-import { Modal } from "../../components/ui/Modal";
+import { Spinner } from "../../../components/ui/Spinner";
+import { Modal } from "../../../components/ui/Modal";
 
 interface PaymentLayoutProps {
   children: ReactNode;
@@ -9,9 +9,13 @@ interface PaymentLayoutProps {
 
 export function PaymentLayout({ children, isProcessing }: PaymentLayoutProps) {
   return (
-    <div 
+    <div
       className="min-h-screen flex flex-col items-center justify-center p-4 relative font-sans"
-      style={{ backgroundImage: "url('/landingBackground.webp')", backgroundSize: "cover", backgroundPosition: "center" }}
+      style={{
+        backgroundImage: "url('/landingBackground.webp')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
       <div className="z-10 flex flex-col items-center max-w-md w-full mt-8">
         <Modal innerClassName="text-center">

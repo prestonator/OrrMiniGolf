@@ -1,16 +1,10 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../utils/supabase";
-import { getMapState } from "../utils/api";
-import { useKioskStore } from "../store/useKioskStore";
-import {
-  Tent,
-  ChevronLeft,
-  UserPlus,
-  Users,
-  Phone,
-} from "lucide-react";
+import { supabase } from "../../../utils/supabase";
+import { getMapState } from "../../map/api/useMapState";
+import { useKioskStore } from "../../../store/useKioskStore";
+import { Tent, ChevronLeft, UserPlus, Users, Phone } from "lucide-react";
 
 export function AuthForm() {
   const [view, setView] = useState<"home" | "signin" | "signup">("home");
@@ -20,7 +14,7 @@ export function AuthForm() {
   const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const setSession = useKioskStore((state) => state.setSession);
+  const setSession = useKioskStore((state: any) => state.setSession);
 
   const signInMutation = useMutation({
     mutationFn: async ({ phone }: { phone: string }) => {
@@ -28,20 +22,21 @@ export function AuthForm() {
         p_phone: phone,
       });
       if (error) throw error;
-      if (!data || !data.success) throw new Error(data?.error || "Invalid phone number");
+      if (!data || !data.success)
+        throw new Error(data?.error || "Invalid phone number");
       return data;
     },
     onSuccess: async (data) => {
       const pioneerId = data.user.id;
       const alias = data.user.first_name;
-      
+
       setSession({
         pioneerId,
         alias,
       });
-      
+
       setWelcomeMessage(`Welcome back, ${alias}!`);
-      
+
       // Wait for a couple seconds before redirecting
       setTimeout(async () => {
         try {
@@ -74,7 +69,8 @@ export function AuthForm() {
         p_phone: phone,
       });
       if (error) throw error;
-      if (!data || !data.success) throw new Error(data?.error || "Failed to register");
+      if (!data || !data.success)
+        throw new Error(data?.error || "Failed to register");
       return data;
     },
     onSuccess: (data) => {
@@ -89,7 +85,10 @@ export function AuthForm() {
     },
   });
 
-  const isSubmitting = signInMutation.isPending || signUpMutation.isPending || welcomeMessage !== null;
+  const isSubmitting =
+    signInMutation.isPending ||
+    signUpMutation.isPending ||
+    welcomeMessage !== null;
   const displayError = localError;
 
   const handleSignInSubmit = (e: React.FormEvent) => {
@@ -131,7 +130,8 @@ export function AuthForm() {
       {view === "home" && (
         <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
           <p className="text-center text-dark-blue font-medium text-lg sm:text-xl mb-6">
-            Stake your claim on the greens! Are you a returning settler or a new pioneer?
+            Stake your claim on the greens! Are you a returning settler or a new
+            pioneer?
           </p>
 
           <button
@@ -196,7 +196,9 @@ export function AuthForm() {
               <h2 className="text-3xl font-serif text-red font-bold uppercase tracking-wider mb-2">
                 {welcomeMessage}
               </h2>
-              <p className="text-dark-blue/70 font-medium">Heading to the greens...</p>
+              <p className="text-dark-blue/70 font-medium">
+                Heading to the greens...
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSignInSubmit} className="space-y-6">

@@ -4,7 +4,7 @@ import Home from './pages/Home'
 import Game from './pages/Game'
 import Login from './pages/Login'
 import MapPage from './pages/Map'
-import Payment from './pages/Payment'
+import Payment from './features/payment/components/Payment'
 
 export const router = createBrowserRouter([
   {

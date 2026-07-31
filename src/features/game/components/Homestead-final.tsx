@@ -4,67 +4,67 @@ Command: npx gltfjsx@6.5.3 .\homestead-final.glb -T -j -t
 Files: .\homestead-final.glb [16.01MB] > E:\Code\OrrMiniGolf\public\homestead-final-transformed.glb [858.73KB] (95%)
 */
 
-import type * as THREE from 'three'
-import React from 'react'
-import { useGLTF } from '@react-three/drei'
-import type { GLTF } from 'three-stdlib'
+import type * as THREE from "three";
+import React from "react";
+import { useGLTF } from "@react-three/drei";
+import type { GLTF } from "three-stdlib";
 import { a, useSpring } from "@react-spring/three";
 
-type GLTFAction = THREE.AnimationClip
+type GLTFAction = THREE.AnimationClip;
 
 type GLTFResult = GLTF & {
   nodes: {
-    tree: THREE.Mesh
-    green: THREE.Mesh
-    Bonfire: THREE.Mesh
-    Hen: THREE.Mesh
-    Shovel4: THREE.Mesh
-    Trolley: THREE.Mesh
-    Water_Shower: THREE.Mesh
-    Well: THREE.Mesh
-    Farm_House: THREE.Mesh
-    Ground001: THREE.Mesh
-    House_Part: THREE.Mesh
-    Plant_Sand: THREE.Mesh
-    Road: THREE.Mesh
-    Horse: THREE.Mesh
-    House: THREE.Mesh
-    Big_Fan: THREE.Mesh
-    Grass: THREE.Mesh
-    Plants: THREE.Mesh
-    Hen_House: THREE.Mesh
-    Lamp: THREE.Mesh
-    Part: THREE.Mesh
-    Pitch_Fork: THREE.Mesh
-    Tent: THREE.Mesh
-    Cut_Tree: THREE.Mesh
-    Fence: THREE.Mesh
-    Out_Door: THREE.Mesh
-    Pant_Shirt_Hang: THREE.Mesh
-    Sand_Stone: THREE.Mesh
-    Tree: THREE.Mesh
-    Tree6: THREE.Mesh
-    Washroom: THREE.Mesh
-    Water_Basket: THREE.Mesh
-    Wood: THREE.Mesh
-  }
+    tree: THREE.Mesh;
+    green: THREE.Mesh;
+    Bonfire: THREE.Mesh;
+    Hen: THREE.Mesh;
+    Shovel4: THREE.Mesh;
+    Trolley: THREE.Mesh;
+    Water_Shower: THREE.Mesh;
+    Well: THREE.Mesh;
+    Farm_House: THREE.Mesh;
+    Ground001: THREE.Mesh;
+    House_Part: THREE.Mesh;
+    Plant_Sand: THREE.Mesh;
+    Road: THREE.Mesh;
+    Horse: THREE.Mesh;
+    House: THREE.Mesh;
+    Big_Fan: THREE.Mesh;
+    Grass: THREE.Mesh;
+    Plants: THREE.Mesh;
+    Hen_House: THREE.Mesh;
+    Lamp: THREE.Mesh;
+    Part: THREE.Mesh;
+    Pitch_Fork: THREE.Mesh;
+    Tent: THREE.Mesh;
+    Cut_Tree: THREE.Mesh;
+    Fence: THREE.Mesh;
+    Out_Door: THREE.Mesh;
+    Pant_Shirt_Hang: THREE.Mesh;
+    Sand_Stone: THREE.Mesh;
+    Tree: THREE.Mesh;
+    Tree6: THREE.Mesh;
+    Washroom: THREE.Mesh;
+    Water_Basket: THREE.Mesh;
+    Wood: THREE.Mesh;
+  };
   materials: {
-    Tree_Fence_Sand_Material: THREE.MeshStandardMaterial
-    ['Material.001']: THREE.MeshStandardMaterial
-    Bonfire_Well_Material: THREE.MeshStandardMaterial
-    Farm_House_Material: THREE.MeshStandardMaterial
-    Ground_Material: THREE.MeshStandardMaterial
-    Horse_Material: THREE.MeshStandardMaterial
-    House_Material: THREE.MeshStandardMaterial
-    Plants_Grass_Fan_Material: THREE.MeshStandardMaterial
-    Tent_Hen_House_Material: THREE.MeshStandardMaterial
-  }
-  animations: GLTFAction[]
-}
+    Tree_Fence_Sand_Material: THREE.MeshStandardMaterial;
+    ["Material.001"]: THREE.MeshStandardMaterial;
+    Bonfire_Well_Material: THREE.MeshStandardMaterial;
+    Farm_House_Material: THREE.MeshStandardMaterial;
+    Ground_Material: THREE.MeshStandardMaterial;
+    Horse_Material: THREE.MeshStandardMaterial;
+    House_Material: THREE.MeshStandardMaterial;
+    Plants_Grass_Fan_Material: THREE.MeshStandardMaterial;
+    Tent_Hen_House_Material: THREE.MeshStandardMaterial;
+  };
+  animations: GLTFAction[];
+};
 interface StageGroupProps {
-  stage: number
-  currentStage: number
-  children?: React.ReactNode
+  stage: number;
+  currentStage: number;
+  children?: React.ReactNode;
 }
 
 function PopInGroup({ stage, currentStage, children }: StageGroupProps) {
@@ -80,26 +80,31 @@ function PopInGroup({ stage, currentStage, children }: StageGroupProps) {
 function DropDownGroup({ stage, currentStage, children }: StageGroupProps) {
   const { scale, position } = useSpring({
     from: { scale: 0, position: [0, 0, 5000] },
-    to: { 
-      scale: currentStage >= stage ? 1 : 0, 
-      position: currentStage >= stage ? [0, 0, 0] : [0, 0, 5000] 
+    to: {
+      scale: currentStage >= stage ? 1 : 0,
+      position: currentStage >= stage ? [0, 0, 0] : [0, 0, 5000],
     },
     delay: (stage - 1) * 200,
     config: { tension: 120, friction: 14 },
   });
   return (
-    <a.group scale={scale} position={position as unknown as [number, number, number]}>
+    <a.group
+      scale={scale}
+      position={position as unknown as [number, number, number]}
+    >
       {children}
     </a.group>
   );
 }
 
-type ModelProps = React.JSX.IntrinsicElements['group'] & {
-  currentStage?: number
-}
+type ModelProps = React.JSX.IntrinsicElements["group"] & {
+  currentStage?: number;
+};
 
 export function Model({ currentStage = 1, ...props }: ModelProps) {
-  const { nodes, materials } = useGLTF('/homestead-final-transformed.glb') as unknown as GLTFResult
+  const { nodes, materials } = useGLTF(
+    "/homestead-final-transformed.glb",
+  ) as unknown as GLTFResult;
 
   return (
     <group {...props} dispose={null}>
@@ -406,4 +411,4 @@ export function Model({ currentStage = 1, ...props }: ModelProps) {
   );
 }
 
-useGLTF.preload('/homestead-final-transformed.glb')
+useGLTF.preload("/homestead-final-transformed.glb");

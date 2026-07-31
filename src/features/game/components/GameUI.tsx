@@ -1,32 +1,5 @@
-import { useState, Suspense, useEffect } from "react";
-import { Canvas } from "@react-three/fiber";
-import { Environment, useTexture, useProgress } from "@react-three/drei";
-import { Model } from "./Homestead-final";
-import {
-  EffectComposer,
-  Bloom,
-  Vignette,
-  ToneMapping,
-} from "@react-three/postprocessing";
-import * as THREE from "three";
-import { getUserTier } from "../utils/api";
 import { useNavigate } from "react-router-dom";
-import { useKioskStore } from "../store/useKioskStore";
-import { ToneMappingMode } from "postprocessing";
-import { Spinner } from "./Spinner";
-import { CameraPanController } from "./CameraPanController";
-
-function CustomEnvironment() {
-  const texture = useTexture("/bgSky3.png");
-  texture.mapping = THREE.EquirectangularReflectionMapping;
-
-  return (
-    <>
-      <Environment preset="forest" />
-      <Environment map={texture} background="only" blur={0.05} backgroundRotation={[0, Math.PI, 0]} />
-    </>
-  );
-}
+import { useKioskStore } from "../../../store/useKioskStore";
 
 const getItemNameForTier = (tier: number) => {
   const items: Record<number, string> = {
@@ -60,82 +33,31 @@ const getItemNameForTier = (tier: number) => {
   return items[tier] || "Mystery Item";
 };
 
-function LoadingOverlay() {
-  const { active, progress } = useProgress();
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    if (!active && progress === 100) {
-      const t = setTimeout(() => setVisible(false), 300);
-      return () => clearTimeout(t);
-    } else if (active) {
-      setVisible(true);
-    }
-  }, [active, progress]);
-
-  if (!visible) return null;
-
-  return (
-    <div className="absolute inset-0 z-50 bg-cream flex flex-col items-center justify-center transition-opacity duration-500">
-      <Spinner 
-        size="lg" 
-        text={`Loading Homestead... ${progress > 0 ? `${Math.round(progress)}%` : ""}`} 
-        subtext="Pioneering the frontier..."
-      />
-    </div>
-  );
+interface GameUIProps {
+  currentStage: number;
+  totalStages: number;
+  session: any;
 }
 
-export default function Scene() {
+export function GameUI({ currentStage, totalStages, session }: GameUIProps) {
   const navigate = useNavigate();
-  const session = useKioskStore((state) => state.session);
-  const clearSession = useKioskStore((state) => state.clearSession);
-
-  const [currentStage, setCurrentStage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const totalStages = 26;
-
-  useEffect(() => {
-    async function load() {
-      if (!session?.pioneerId) {
-        setLoading(false);
-        return;
-      }
-      const tier = await getUserTier(session.pioneerId);
-      // Tier 0 -> Stage 1, Tier 1 -> Stage 2, etc. Max 26.
-      setCurrentStage(Math.min(totalStages, tier + 1));
-      setLoading(false);
-    }
-    load();
-  }, [session?.pioneerId]);
+  const clearSession = useKioskStore((state: any) => state.clearSession);
 
   const handleLogout = () => {
     clearSession();
     navigate("/");
   };
 
-  if (loading) {
-    return (
-      <div className="w-full h-screen bg-cream flex flex-col items-center justify-center">
-        <Spinner 
-          size="lg" 
-          text="Loading Homestead..." 
-          subtext="Pioneering the frontier..." 
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="relative w-full h-screen">
-      <LoadingOverlay />
+    <>
       {/* 1. Welcome Banner (Top Header) */}
       <div className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 max-w-xl w-[95vw] sm:w-auto pointer-events-auto">
         <div className="bg-cream border border-dark-blue/60 p-[3px] shadow-2xl rounded-sm w-full">
           <div className="border border-dark-blue/60 p-3 sm:p-4 bg-cream text-center flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
               <h1 className="text-lg sm:text-xl font-bold text-dark-blue font-serif uppercase tracking-wide">
-                Welcome to your Stage {currentStage} Homestead, {session?.alias || 'Pioneer'}
+                Welcome to your Stage {currentStage} Homestead,{" "}
+                {session?.alias || "Pioneer"}
               </h1>
               <p className="text-xs sm:text-sm font-semibold text-dark-blue/80">
                 Stage {currentStage} / {totalStages}
@@ -156,12 +78,13 @@ export default function Scene() {
         {currentStage > 0 && (
           <div className="bg-[#99182a] border-2 border-[#e69e45] text-[#f2e3da] px-6 py-3 rounded-xl shadow-2xl animate-in zoom-in-95 duration-300 w-full">
             <p className="font-rye text-xl sm:text-2xl uppercase tracking-wider text-center">
-              Tier {currentStage} Achieved! +1 {getItemNameForTier(currentStage)}
+              Tier {currentStage} Achieved! +1{" "}
+              {getItemNameForTier(currentStage)}
             </p>
           </div>
         )}
         <div className="bg-[#132c3f]/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/20 text-amber-200 text-xs sm:text-sm font-medium tracking-wide shadow-md">
-          {currentStage === 26 
+          {currentStage === 26
             ? "Congratulations! You have proved your homestead and are now eligible for the 20k mini golf tournament"
             : `Reach Tier ${currentStage + 1} to unlock the ${getItemNameForTier(currentStage + 1)}!`}
         </div>
@@ -189,36 +112,6 @@ export default function Scene() {
           </div>
         </div>
       )}
-
-      {/* 3D Canvas */}
-      <Canvas shadows camera={{ position: [30, 8, 44], fov: 50 }}>
-        {/* Lighting Setup */}
-        <directionalLight
-          castShadow
-          color="#ff8c42"
-          position={[-50, 15, -50]}
-          intensity={2.5}
-          shadow-mapSize={[2048, 2048]}
-          shadow-bias={-0.0005}
-        >
-          <orthographicCamera
-            attach="shadow-camera"
-            args={[-40, 40, 40, -40, 0.1, 500]}
-          />
-        </directionalLight>
-        <Suspense fallback={null}>
-          <Model currentStage={currentStage} />
-          <CustomEnvironment />
-        </Suspense>
-        {/* Camera Pan Animation and Interactive Orbit Controls */}
-        <CameraPanController />
-        {/* Post Processing Composer applies to everything */}
-        <EffectComposer enableNormalPass={false}>
-          <ToneMapping mode={ToneMappingMode.NEUTRAL} />
-          <Bloom luminanceThreshold={1.1} mipmapBlur intensity={0.5} />
-          <Vignette eskil={false} offset={0.05} darkness={0.9} />
-        </EffectComposer>
-      </Canvas>
-    </div>
+    </>
   );
 }

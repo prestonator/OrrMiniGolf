@@ -1,6 +1,6 @@
-import { Modal } from '../ui/Modal';
-import { Button } from '../ui/Button';
-import { Spinner } from '../Spinner';
+import { Modal } from "../../../components/ui/Modal";
+import { Button } from "../../../components/ui/Button";
+import { Spinner } from "../../../components/ui/Spinner";
 
 interface ClaimModalProps {
   activePlot: number | null;
@@ -10,7 +10,13 @@ interface ClaimModalProps {
   onConfirm: () => void;
 }
 
-export function ClaimModal({ activePlot, isProcessing, errorMsg, onCancel, onConfirm }: ClaimModalProps) {
+export function ClaimModal({
+  activePlot,
+  isProcessing,
+  errorMsg,
+  onCancel,
+  onConfirm,
+}: ClaimModalProps) {
   if (activePlot === null) return null;
 
   return (
@@ -26,7 +32,11 @@ export function ClaimModal({ activePlot, isProcessing, errorMsg, onCancel, onCon
             Confirm Claim
           </h2>
           <p className="text-dark-blue/90 mb-6 font-medium text-base">
-            You are about to claim <strong className="font-bold text-red font-serif">Plot #{activePlot}</strong>. <br /> 
+            You are about to claim{" "}
+            <strong className="font-bold text-red font-serif">
+              Plot #{activePlot}
+            </strong>
+            . <br />
             Confirm your claim to take ownership and increase your tier.
           </p>
 
@@ -37,16 +47,16 @@ export function ClaimModal({ activePlot, isProcessing, errorMsg, onCancel, onCon
           )}
 
           <div className="flex gap-3 justify-center">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={onCancel}
               disabled={isProcessing}
               className="flex-1"
             >
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={onConfirm}
               disabled={isProcessing}
               className="flex-[2]"

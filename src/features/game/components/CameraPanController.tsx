@@ -1,7 +1,7 @@
-import { useRef, useEffect } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
+import { useRef, useEffect } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import * as THREE from "three";
 
 interface CameraPanProps {
   startPos?: [number, number, number];
@@ -25,7 +25,9 @@ export function CameraPanController({
 
   const startEuler = useRef(new THREE.Euler());
   const targetQuaternion = useRef(
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(targetRot[0], targetRot[1], targetRot[2]))
+    new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(targetRot[0], targetRot[1], targetRot[2]),
+    ),
   );
 
   useEffect(() => {
@@ -41,7 +43,8 @@ export function CameraPanController({
       startTimeRef.current = state.clock.getElapsedTime();
     }
 
-    const elapsedMs = (state.clock.getElapsedTime() - startTimeRef.current) * 1000;
+    const elapsedMs =
+      (state.clock.getElapsedTime() - startTimeRef.current) * 1000;
 
     if (elapsedMs < holdDelayMs) {
       if (controlsRef.current) {
@@ -53,12 +56,26 @@ export function CameraPanController({
     const progress = Math.min((elapsedMs - holdDelayMs) / durationMs, 1);
     const easeProgress = THREE.MathUtils.smoothstep(progress, 0, 1);
 
-    camera.position.x = THREE.MathUtils.lerp(startPos[0], targetPos[0], easeProgress);
-    camera.position.y = THREE.MathUtils.lerp(startPos[1], targetPos[1], easeProgress);
-    camera.position.z = THREE.MathUtils.lerp(startPos[2], targetPos[2], easeProgress);
+    camera.position.x = THREE.MathUtils.lerp(
+      startPos[0],
+      targetPos[0],
+      easeProgress,
+    );
+    camera.position.y = THREE.MathUtils.lerp(
+      startPos[1],
+      targetPos[1],
+      easeProgress,
+    );
+    camera.position.z = THREE.MathUtils.lerp(
+      startPos[2],
+      targetPos[2],
+      easeProgress,
+    );
 
     const startQuat = new THREE.Quaternion().setFromEuler(startEuler.current);
-    camera.quaternion.copy(startQuat).slerp(targetQuaternion.current, easeProgress);
+    camera.quaternion
+      .copy(startQuat)
+      .slerp(targetQuaternion.current, easeProgress);
 
     if (controlsRef.current) {
       controlsRef.current.update();

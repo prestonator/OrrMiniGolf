@@ -7,7 +7,14 @@ export const CITY_TARGETS: Record<string, number> = {
   "El Reno": 645,
 };
 
-export const CITIES = ["Kingfisher", "Guthrie", "Stillwater", "OKC", "Norman", "El Reno"];
+export const CITIES = [
+  "Kingfisher",
+  "Guthrie",
+  "Stillwater",
+  "OKC",
+  "Norman",
+  "El Reno",
+];
 
 export const GRID_COLS = 40;
 export const GRID_ROWS = 30;

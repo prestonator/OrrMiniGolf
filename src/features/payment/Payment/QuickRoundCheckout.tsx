@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { Card } from "../../../components/ui/Card";
 
 interface QuickRoundCheckoutProps {
   paymentStatus: "idle" | "success";
@@ -10,13 +10,30 @@ interface QuickRoundCheckoutProps {
   onCancel: () => void;
 }
 
-export function QuickRoundCheckout({ paymentStatus, receiptCode, isProcessing, onSimulatePayment, onCancel }: QuickRoundCheckoutProps) {
+export function QuickRoundCheckout({
+  paymentStatus,
+  receiptCode,
+  isProcessing,
+  onSimulatePayment,
+  onCancel,
+}: QuickRoundCheckoutProps) {
   if (paymentStatus === "success") {
     return (
       <div className="py-4">
         <div className="w-16 h-16 bg-light-blue rounded-full flex items-center justify-center mx-auto mb-6 text-white shadow-md">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-8 w-8"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={3}
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
         <h2 className="text-3xl font-bold text-dark-blue mb-2 font-serif uppercase tracking-wider">
@@ -26,10 +43,17 @@ export function QuickRoundCheckout({ paymentStatus, receiptCode, isProcessing, o
           Present this receipt code to the attendant to receive your equipment.
         </p>
         <div className="bg-white border-2 border-dark-blue border-dashed p-6 mb-8 transform -rotate-1 shadow-sm">
-          <p className="text-sm text-dark-blue/60 uppercase tracking-widest mb-1">Receipt Code</p>
-          <p className="text-5xl font-mono font-bold text-dark-blue tracking-widest">{receiptCode}</p>
+          <p className="text-sm text-dark-blue/60 uppercase tracking-widest mb-1">
+            Receipt Code
+          </p>
+          <p className="text-5xl font-mono font-bold text-dark-blue tracking-widest">
+            {receiptCode}
+          </p>
         </div>
-        <Link to="/" className="inline-block bg-light-blue hover:bg-light-blue/90 text-cream font-bold text-lg py-3 px-8 rounded shadow-lg shadow-light-blue/30 transition-all active:translate-y-1 uppercase tracking-wide">
+        <Link
+          to="/"
+          className="inline-block bg-light-blue hover:bg-light-blue/90 text-cream font-bold text-lg py-3 px-8 rounded shadow-lg shadow-light-blue/30 transition-all active:translate-y-1 uppercase tracking-wide"
+        >
           Done
         </Link>
       </div>
@@ -55,7 +79,11 @@ export function QuickRoundCheckout({ paymentStatus, receiptCode, isProcessing, o
         </Card>
       </div>
       <div className="flex flex-col gap-4 text-center">
-        <Button variant="primary" onClick={onSimulatePayment} disabled={isProcessing}>
+        <Button
+          variant="primary"
+          onClick={onSimulatePayment}
+          disabled={isProcessing}
+        >
           Pay $15.00
         </Button>
         <Button variant="outline" onClick={onCancel} disabled={isProcessing}>

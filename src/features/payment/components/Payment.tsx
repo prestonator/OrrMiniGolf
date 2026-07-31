@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useKioskStore } from "../store/useKioskStore";
-import { PaymentLayout } from "./Payment/PaymentLayout";
-import { VisitCheckout } from "./Payment/VisitCheckout";
-import { QuickRoundCheckout } from "./Payment/QuickRoundCheckout";
+import { useKioskStore } from "../../../store/useKioskStore";
+import { PaymentLayout } from "../Payment/PaymentLayout";
+import { VisitCheckout } from "../Payment/VisitCheckout";
+import { QuickRoundCheckout } from "../Payment/QuickRoundCheckout";
 
 export interface PaymentProps {
   mode?: "quick-round" | "visit";
 }
 
 export default function Payment({ mode = "quick-round" }: PaymentProps) {
-  const [paymentStatus, setPaymentStatus] = useState<"idle" | "success">("idle");
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "success">(
+    "idle",
+  );
   const [receiptCode, setReceiptCode] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -34,7 +36,7 @@ export default function Payment({ mode = "quick-round" }: PaymentProps) {
     setTimeout(() => {
       setIsProcessing(false);
       handleSuccess();
-    }, 1500); 
+    }, 1500);
   };
 
   const handleSuccess = () => {
@@ -63,19 +65,19 @@ export default function Payment({ mode = "quick-round" }: PaymentProps) {
   return (
     <PaymentLayout isProcessing={isProcessing}>
       {mode === "visit" ? (
-        <VisitCheckout 
-          alias={session?.alias} 
-          isProcessing={isProcessing} 
-          onSimulatePayment={handleSimulatePayment} 
-          onCancel={handleCancel} 
+        <VisitCheckout
+          alias={session?.alias}
+          isProcessing={isProcessing}
+          onSimulatePayment={handleSimulatePayment}
+          onCancel={handleCancel}
         />
       ) : (
-        <QuickRoundCheckout 
-          paymentStatus={paymentStatus} 
-          receiptCode={receiptCode} 
-          isProcessing={isProcessing} 
-          onSimulatePayment={handleSimulatePayment} 
-          onCancel={handleCancel} 
+        <QuickRoundCheckout
+          paymentStatus={paymentStatus}
+          receiptCode={receiptCode}
+          isProcessing={isProcessing}
+          onSimulatePayment={handleSimulatePayment}
+          onCancel={handleCancel}
         />
       )}
     </PaymentLayout>

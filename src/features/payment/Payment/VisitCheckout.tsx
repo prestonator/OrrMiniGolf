@@ -1,5 +1,5 @@
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { Card } from "../../../components/ui/Card";
 
 interface VisitCheckoutProps {
   alias?: string;
@@ -8,14 +8,20 @@ interface VisitCheckoutProps {
   onCancel: () => void;
 }
 
-export function VisitCheckout({ alias, isProcessing, onSimulatePayment, onCancel }: VisitCheckoutProps) {
+export function VisitCheckout({
+  alias,
+  isProcessing,
+  onSimulatePayment,
+  onCancel,
+}: VisitCheckoutProps) {
   return (
     <>
       <h2 className="text-3xl font-bold text-dark-blue mb-6 font-serif uppercase tracking-wider">
         Return Visit
       </h2>
       <p className="text-dark-blue mb-6 font-medium text-lg">
-        Welcome back, <span className="font-serif font-bold">{alias}</span>! Ready to hit the links again?
+        Welcome back, <span className="font-serif font-bold">{alias}</span>!
+        Ready to hit the links again?
       </p>
       <div className="text-left">
         <Card className="mb-6">
@@ -30,7 +36,11 @@ export function VisitCheckout({ alias, isProcessing, onSimulatePayment, onCancel
           </p>
         </Card>
         <div className="flex flex-col gap-4">
-          <Button variant="primary" onClick={onSimulatePayment} disabled={isProcessing}>
+          <Button
+            variant="primary"
+            onClick={onSimulatePayment}
+            disabled={isProcessing}
+          >
             Pay $15.00
           </Button>
           <Button variant="outline" onClick={onCancel} disabled={isProcessing}>

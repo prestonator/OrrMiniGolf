@@ -1,14 +1,17 @@
-import { AuthForm } from "../components/AuthForm";
+import { AuthForm } from "../features/auth/components/AuthForm";
 import { Wheat, Pickaxe } from "lucide-react";
 
 export default function Login() {
   return (
-    <div 
+    <div
       className="min-h-screen flex flex-col items-center justify-center p-4 relative font-sans"
-      style={{ backgroundImage: "url('/landingBackground.webp')", backgroundSize: "cover", backgroundPosition: "center" }}
+      style={{
+        backgroundImage: "url('/landingBackground.webp')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
       <div className="z-10 flex flex-col items-center max-w-md w-full mt-8">
-        
         {/* Branding Area */}
         <div className="flex flex-col items-center mb-6">
           <div className="flex gap-4 mb-2 text-red">
