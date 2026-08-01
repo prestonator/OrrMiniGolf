@@ -12,6 +12,8 @@ export function AuthForm() {
   const [phone, setPhone] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const navigate = useNavigate();
   const setSession = useKioskStore((state: any) => state.setSession);
@@ -123,6 +125,8 @@ export function AuthForm() {
     setPhone("");
     setLocalError(null);
     setWelcomeMessage(null);
+    setAgreedToTerms(false);
+    setShowTermsModal(false);
   };
 
   return (
@@ -311,14 +315,55 @@ export function AuthForm() {
               </p>
             )}
 
+            <div className="flex items-start gap-3 mt-4 mb-2">
+              <input
+                type="checkbox"
+                id="amateur-terms"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 h-5 w-5 rounded border-dark-blue/30 text-light-blue focus:ring-light-blue cursor-pointer"
+              />
+              <label htmlFor="amateur-terms" className="text-sm text-dark-blue/80 leading-tight cursor-pointer">
+                I agree to the <button type="button" onClick={() => setShowTermsModal(true)} className="text-light-blue underline font-bold hover:text-light-blue/80">Terms & Conditions</button> and certify that I am an Amateur mini-golfer.
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={isSubmitting || !firstName.trim() || !phone.trim()}
+              disabled={isSubmitting || !firstName.trim() || !phone.trim() || !agreedToTerms}
               className="w-full py-4 mt-2 bg-red text-cream disabled:bg-dark-blue/40 hover:bg-red/90 transition-colors rounded shadow-lg shadow-red/30 tracking-wide uppercase font-bold text-lg"
             >
               {isSubmitting ? "Registering..." : "Register & Play"}
             </button>
           </form>
+        </div>
+      )}
+      {showTermsModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-cream border-2 border-dark-blue/60 p-6 max-w-md w-full shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <h3 className="font-serif text-dark-blue text-xl font-bold uppercase tracking-tighter mb-4">
+              Tournament Eligibility & Compliance
+            </h3>
+            <div className="space-y-3 text-dark-blue/80 text-sm font-medium leading-relaxed mb-6">
+              <p>
+                To maintain the spirit of the Homestead Challenge, we enforce a strict <strong className="text-dark-blue">"Amateur Only"</strong> policy to prevent professional mini-golfers from claiming the prize.
+              </p>
+              <p>
+                By checking the agreement box, you acknowledge that you are an amateur and are <strong>not</strong> currently an active member of any major Professional Mini-Golf Association, including but not limited to:
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Professional Putters Association (PPA)</li>
+                <li>World Minigolf Sport Federation (WMF)</li>
+                <li>US ProMiniGolf Association (USPMGA)</li>
+              </ul>
+            </div>
+            <button
+              onClick={() => setShowTermsModal(false)}
+              className="w-full py-3 bg-dark-blue text-cream hover:bg-dark-blue/90 transition-colors rounded uppercase font-bold tracking-wider"
+            >
+              I Understand
+            </button>
+          </div>
         </div>
       )}
     </>
