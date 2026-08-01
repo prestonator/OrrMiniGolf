@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useKioskStore } from "../../../store/useKioskStore";
 import { DeedCertificate } from "./DeedCertificate";
@@ -53,7 +53,17 @@ export function GameUI({ currentStage, totalStages, session }: GameUIProps) {
   const [isSending, setIsSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+  const [showDeed, setShowDeed] = useState(false);
   const deedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (currentStage === 26) {
+      const timer = setTimeout(() => setShowDeed(true), 7000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowDeed(false);
+    }
+  }, [currentStage]);
 
   const handleLogout = () => {
     clearSession();
@@ -152,7 +162,7 @@ export function GameUI({ currentStage, totalStages, session }: GameUIProps) {
       )}
 
       {/* Final Tier Reward Sequence */}
-      {currentStage === 26 && (
+      {currentStage === 26 && showDeed && (
         <div className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none p-4 bg-black/60 backdrop-blur-sm overflow-y-auto pt-24 sm:pt-4">
           <div className="pointer-events-auto flex flex-col items-center w-full max-w-5xl animate-[pop-up_0.6s_cubic-bezier(0.16,1,0.3,1)_forwards]">
             {/* The Deed */}
