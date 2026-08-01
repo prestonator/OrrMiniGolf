@@ -1,5 +1,10 @@
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useKioskStore } from "../../../store/useKioskStore";
+import { DeedCertificate } from "./DeedCertificate";
+import { toJpeg } from "html-to-image";
+import { jsPDF } from "jspdf";
+import { supabase } from "../../../utils/supabase";
 
 const getItemNameForTier = (tier: number) => {
   const items: Record<number, string> = {
@@ -36,16 +41,66 @@ const getItemNameForTier = (tier: number) => {
 interface GameUIProps {
   currentStage: number;
   totalStages: number;
-  session: any;
+  session: { pioneerId: string; alias: string } | null;
 }
 
 export function GameUI({ currentStage, totalStages, session }: GameUIProps) {
   const navigate = useNavigate();
-  const clearSession = useKioskStore((state: any) => state.clearSession);
+  const clearSession = useKioskStore((state) => state.clearSession);
+
+  // Email state
+  const [email, setEmail] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState(false);
+  const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+  const deedRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
     clearSession();
     navigate("/");
+  };
+
+  const handleEmailDeed = async () => {
+    if (!email || !deedRef.current) return;
+    setIsSending(true);
+    try {
+      // 1. Capture the DOM node using html-to-image which handles modern CSS (like oklch) better
+      const width = deedRef.current.offsetWidth;
+      const height = deedRef.current.offsetHeight;
+      const imgData = await toJpeg(deedRef.current, {
+        quality: 0.8,
+        pixelRatio: 1,
+      });
+
+      // 2. Create PDF
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "px",
+        format: [width, height],
+      });
+      pdf.addImage(imgData, "JPEG", 0, 0, width, height);
+      const pdfBase64 = pdf.output("datauristring").split(",")[1];
+
+      // 3. Send to Edge Function using Supabase client
+      const { error } = await supabase.functions.invoke("send-deed", {
+        body: {
+          email,
+          pdfBase64,
+          name: session?.alias || "Pioneer",
+        },
+      });
+
+      if (error) throw error;
+      setSendSuccess(true);
+      setTimeout(() => {
+        setShowEmailPrompt(false);
+      }, 3000);
+    } catch (e: any) {
+      console.error("Error sending email:", e);
+      alert(`Error sending email: ${e.message || JSON.stringify(e)}`);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -74,41 +129,96 @@ export function GameUI({ currentStage, totalStages, session }: GameUIProps) {
       </div>
 
       {/* 2 & 3. Bottom Unlock Banner & Next Milestone Tease */}
-      <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-auto text-center px-4 w-full max-w-md">
-        {currentStage > 0 && (
-          <div className="bg-[#99182a] border-2 border-[#e69e45] text-[#f2e3da] px-6 py-3 rounded-xl shadow-2xl animate-in zoom-in-95 duration-300 w-full">
-            <p className="font-rye text-xl sm:text-2xl uppercase tracking-wider text-center">
-              Tier {currentStage} Achieved! +1{" "}
-              {getItemNameForTier(currentStage)}
-            </p>
+      {currentStage < totalStages && (
+        <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-auto text-center px-4 w-full max-w-md">
+          {currentStage > 0 && (
+            <div className="bg-[#99182a] border-2 border-[#e69e45] text-[#f2e3da] px-6 py-3 rounded-xl shadow-2xl animate-in zoom-in-95 duration-300 w-full">
+              <p className="font-rye text-xl sm:text-2xl uppercase tracking-wider text-center">
+                Tier {currentStage} Achieved! +1{" "}
+                {getItemNameForTier(currentStage)}
+              </p>
+            </div>
+          )}
+          <div className="bg-[#132c3f]/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/20 text-amber-200 text-xs sm:text-sm font-medium tracking-wide shadow-md">
+            Reach Tier {currentStage + 1} to unlock the{" "}
+            {getItemNameForTier(currentStage + 1)}!
           </div>
-        )}
-        <div className="bg-[#132c3f]/90 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/20 text-amber-200 text-xs sm:text-sm font-medium tracking-wide shadow-md">
-          {currentStage === 26
-            ? "Congratulations! You have proved your homestead and are now eligible for the 20k mini golf tournament"
-            : `Reach Tier ${currentStage + 1} to unlock the ${getItemNameForTier(currentStage + 1)}!`}
         </div>
-      </div>
+      )}
 
-      {/* Celebration Pop-up */}
+      {/* Final Tier Reward Sequence */}
       {currentStage === 26 && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none p-4 mt-20 sm:mt-0">
-          <div className="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-sm text-center border-4 border-yellow-500 pointer-events-auto animate-[pop-up_0.5s_cubic-bezier(0.16,1,0.3,1)_forwards]">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-              Congratulations!
-            </h2>
-            <p className="text-gray-600 text-sm sm:text-base mb-6">
-              You have proven up your 160-acre plot! You are eligible for the
-              $20,000 Land Rush Tournament!
-            </p>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="w-full p-2.5 sm:p-3 border rounded mb-4 text-black text-sm sm:text-base"
-            />
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 sm:py-3 rounded transition-colors text-sm sm:text-base">
-              Claim Certificate of Homestead
-            </button>
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none p-4 bg-black/60 backdrop-blur-sm overflow-y-auto pt-24 sm:pt-4">
+          <div className="pointer-events-auto flex flex-col items-center w-full max-w-5xl animate-[pop-up_0.6s_cubic-bezier(0.16,1,0.3,1)_forwards]">
+            {/* The Deed */}
+            <div className="w-full flex justify-center transform scale-90 sm:scale-100 origin-top">
+              <DeedCertificate
+                ref={deedRef}
+                name={session?.alias || "Pioneer"}
+              />
+            </div>
+
+            {/* Actions below the deed */}
+            <div className="mt-8 bg-white/95 p-6 rounded-xl shadow-2xl w-full max-w-md text-center border-4 border-[#8b5a2b]">
+              {!showEmailPrompt ? (
+                <>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2 font-serif">
+                    Congratulations!
+                  </h2>
+                  <p className="text-gray-600 mb-6">
+                    You have proven up your 160-acre plot! Claim your official
+                    Certificate of Homestead.
+                  </p>
+                  <button
+                    onClick={() => setShowEmailPrompt(true)}
+                    className="w-full bg-[#8b5a2b] hover:bg-[#6b441f] text-white font-bold py-3 rounded transition-colors uppercase tracking-widest"
+                  >
+                    Email My Deed
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full mt-3 text-gray-500 hover:text-gray-800 underline text-sm"
+                  >
+                    No thanks, just log out
+                  </button>
+                </>
+              ) : sendSuccess ? (
+                <div className="text-green-700 font-bold p-4 bg-green-50 rounded">
+                  <p className="text-xl mb-2">Success!</p>
+                  <p className="text-sm">Your deed has been sent to {email}.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <h3 className="text-lg font-bold text-gray-800">
+                    Send to Email
+                  </h3>
+                  <input
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-3 border-2 border-gray-300 rounded text-black focus:border-[#8b5a2b] focus:outline-none"
+                    disabled={isSending}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowEmailPrompt(false)}
+                      className="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded transition-colors"
+                      disabled={isSending}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleEmailDeed}
+                      className="w-2/3 bg-[#8b5a2b] hover:bg-[#6b441f] text-white font-bold py-3 rounded transition-colors disabled:opacity-50"
+                      disabled={isSending || !email.includes("@")}
+                    >
+                      {isSending ? "Generating PDF..." : "Send Email"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
