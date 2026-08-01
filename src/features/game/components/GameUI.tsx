@@ -95,9 +95,14 @@ export function GameUI({ currentStage, totalStages, session }: GameUIProps) {
       setTimeout(() => {
         setShowEmailPrompt(false);
       }, 3000);
-    } catch (e: any) {
-      console.error("Error sending email:", e);
-      alert(`Error sending email: ${e.message || JSON.stringify(e)}`);
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e !== null && "message" in e
+          ? String((e as { message: unknown }).message)
+          : JSON.stringify(e);
+      alert(`Error sending email: ${errorMessage}`);
     } finally {
       setIsSending(false);
     }
