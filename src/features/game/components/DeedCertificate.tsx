@@ -36,7 +36,7 @@ export const DeedCertificate = React.forwardRef<
           className="absolute flex items-center justify-center text-center"
           style={{
             // EDIT THESE PERCENTAGES TO PERFECTLY ALIGN THE NAME
-            top: "45%", 
+            top: "30%", 
             left: "10%",
             width: "80%",
             // Dynamic scaling relative to container width using container queries or vw, 
@@ -55,10 +55,10 @@ export const DeedCertificate = React.forwardRef<
           className="absolute flex items-center justify-center text-center"
           style={{
             // EDIT THESE PERCENTAGES TO PERFECTLY ALIGN THE DATE
-            top: "65%", 
+            top: "77%", 
             left: "10%",
             width: "80%",
-            fontSize: "clamp(1.5rem, 3vw, 4rem)",
+            fontSize: "clamp(0.5rem, 2vw, 3rem)",
             fontFamily: "var(--font-imfell), serif",
             color: "#2c1c11",
           }}
