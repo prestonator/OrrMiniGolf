@@ -20,6 +20,14 @@
   --font-mono: var(--font-geist-mono);
   --font-serif: "Playfair Display", serif;
   --font-rye: "Rye", serif;
+  --font-imfell: "IM Fell English", serif;
+}
+
+@font-face {
+  font-family: "IM Fell English";
+  src: url("/IMFellEnglish-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
 }
 
 @media (prefers-color-scheme: dark) {

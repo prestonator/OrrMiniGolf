@@ -69,6 +69,33 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react/') || id.includes('react-dom/') || id.includes('react-router-dom/')) {
+              return 'react-vendor';
+            }
+            if (id.includes('three/') || id.includes('three\\') || id.includes('@react-three')) {
+              return 'three-vendor';
+            }
+            if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('html-to-image')) {
+              return 'pdf-vendor';
+            }
+            if (id.includes('@supabase')) {
+              return 'supabase-vendor';
+            }
+            if (id.includes('framer-motion')) {
+              return 'framer-vendor';
+            }
+            return 'vendor';
+          }
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

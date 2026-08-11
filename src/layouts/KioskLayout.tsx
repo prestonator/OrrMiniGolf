@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, Suspense } from 'react'
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useKioskStore } from '../store/useKioskStore'
@@ -60,7 +60,9 @@ export function KioskLayout() {
 
   return (
     <div className="w-full h-full min-h-screen">
-      <Outlet />
+      <Suspense fallback={<div className="flex items-center justify-center w-full h-full min-h-[50vh] text-slate-800 dark:text-slate-200">Loading...</div>}>
+        <Outlet />
+      </Suspense>
     </div>
   )
 }

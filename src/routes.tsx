@@ -1,10 +1,12 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { KioskLayout } from './layouts/KioskLayout'
-import Home from './pages/Home'
-import Game from './pages/Game'
-import Login from './pages/Login'
-import MapPage from './pages/Map'
-import Payment from './features/payment/components/Payment'
+import { lazy } from 'react'
+
+const Home = lazy(() => import('./pages/Home'))
+const Game = lazy(() => import('./pages/Game'))
+const Login = lazy(() => import('./pages/Login'))
+const MapPage = lazy(() => import('./pages/Map'))
+const Payment = lazy(() => import('./features/payment/components/Payment'))
 
 export const router = createBrowserRouter([
   {

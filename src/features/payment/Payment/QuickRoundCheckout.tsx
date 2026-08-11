@@ -74,7 +74,7 @@ export function QuickRoundCheckout({
         <Card className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <span className="text-dark-blue font-bold text-lg">Quantity</span>
-            <div className="flex items-center gap-4 bg-white/50 border border-dark-blue/30 rounded p-1">
+            <div className="flex items-center gap-2 bg-white/50 border border-dark-blue/30 rounded p-1">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={quantity <= 1 || isProcessing}
@@ -82,12 +82,29 @@ export function QuickRoundCheckout({
               >
                 -
               </button>
-              <span className="font-mono text-lg font-bold w-4 text-center text-dark-blue">
-                {quantity}
-              </span>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={quantity || ""}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  if (isNaN(val)) {
+                    setQuantity(0 as any); // allow empty state briefly while typing
+                  } else {
+                    setQuantity(Math.min(100, Math.max(1, val)));
+                  }
+                }}
+                onBlur={(e) => {
+                  const val = parseInt(e.target.value);
+                  if (isNaN(val) || val < 1) setQuantity(1);
+                }}
+                disabled={isProcessing}
+                className="w-16 font-mono text-lg font-bold text-center text-dark-blue bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-dark-blue/30 rounded px-1 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none m-0"
+              />
               <button
-                onClick={() => setQuantity(Math.min(10, quantity + 1))}
-                disabled={quantity >= 10 || isProcessing}
+                onClick={() => setQuantity(Math.min(100, quantity + 1))}
+                disabled={quantity >= 100 || isProcessing}
                 className="w-8 h-8 flex items-center justify-center text-xl font-bold text-dark-blue bg-white rounded shadow-sm hover:bg-gray-50 disabled:opacity-50"
               >
                 +
