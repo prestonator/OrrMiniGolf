@@ -12,6 +12,7 @@ import { Spinner } from "../../../components/ui/Spinner";
 
 import { useMapState } from "../api/useMapState";
 import { useClaimPlot } from "../api/useClaimPlot";
+import { usePurchaseRounds } from "../../payment/api/usePurchaseRounds";
 import {
   CITY_TARGETS,
   CITIES,
@@ -44,6 +45,7 @@ export default function OklahomaPlotMap() {
 
   const { data: mapState, isLoading } = useMapState(currentUserId);
   const claimPlotMutation = useClaimPlot();
+  const { mutateAsync: purchaseRounds } = usePurchaseRounds();
 
   const [pendingPlots, setPendingPlots] = useState<number[]>([]);
   const [showClaimModal, setShowClaimModal] = useState(false);
@@ -150,12 +152,17 @@ export default function OklahomaPlotMap() {
     [plotDetails, pendingPlots, mapState?.canClaim],
   );
 
-  const handleInitiatePayment = async () => {
+  const handleInitiatePayment = async (quantity: number) => {
     if (activePlot === null || !currentUserId) return;
     setIsProcessing(true);
     setErrorMsg("");
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
+      
+      if (quantity > 1) {
+        await purchaseRounds({ userId: currentUserId, quantity: quantity - 1 });
+      }
+
       await claimPlotMutation.mutateAsync({
         plotId: activePlot,
         userId: currentUserId,

@@ -101,7 +101,7 @@ export function AuthForm() {
     }
 
     setLocalError(null);
-    signInMutation.mutate({ phone: phone.trim() });
+    signInMutation.mutate({ phone: phone.replace(/\D/g, "") });
   };
 
   const handleSignUpSubmit = (e: React.FormEvent) => {
@@ -116,7 +116,7 @@ export function AuthForm() {
     }
 
     setLocalError(null);
-    signUpMutation.mutate({ firstName: firstName.trim(), phone: phone.trim() });
+    signUpMutation.mutate({ firstName: firstName.trim(), phone: phone.replace(/\D/g, "") });
   };
 
   const resetToHome = () => {
